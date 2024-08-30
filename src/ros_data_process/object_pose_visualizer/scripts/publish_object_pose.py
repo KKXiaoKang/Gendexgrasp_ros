@@ -24,7 +24,7 @@ def publish_pose():
 
         # 设置位置
         hypothesis.pose.pose.position.x = 0.6
-        hypothesis.pose.pose.position.y = -0.1
+        hypothesis.pose.pose.position.y = 0.1
         hypothesis.pose.pose.position.z = 0.0
 
         # 设置四元数为单位四元数

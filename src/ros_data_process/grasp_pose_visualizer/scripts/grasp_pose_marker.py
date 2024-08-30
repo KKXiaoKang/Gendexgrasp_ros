@@ -29,7 +29,7 @@ class GraspPoseVisualizer:
         #     1.0, 0.0, 0.0, "Right"
         # )
         marker = self.construct_marker(
-            [(0.6 + position.x), (-0.1 + position.y), (0.0 + position.z)], # 先给一个固定位置（测试抓取姿态生成稳定性）
+            [(0.6 + position.x), (0.1 + position.y), (0.0 + position.z)], # 先给一个固定位置（测试抓取姿态生成稳定性）
             [orientation.x, orientation.y, orientation.z, orientation.w],
             1.0, 0.0, 0.0, "Left"
         )
