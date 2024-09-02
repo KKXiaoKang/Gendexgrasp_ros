@@ -23,9 +23,9 @@ def publish_pose():
         hypothesis = ObjectHypothesisWithPose()
 
         # 设置位置
-        hypothesis.pose.pose.position.x = 0.6
-        hypothesis.pose.pose.position.y = 0.1
-        hypothesis.pose.pose.position.z = 0.0
+        hypothesis.pose.pose.position.x = 0.4
+        hypothesis.pose.pose.position.y = 0.2
+        hypothesis.pose.pose.position.z = 0.1
 
         # 设置四元数为单位四元数
         hypothesis.pose.pose.orientation = Quaternion(*tf.transformations.quaternion_from_euler(0, 0, 0))

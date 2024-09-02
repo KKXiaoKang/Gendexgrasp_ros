@@ -8,12 +8,14 @@ class GraspPoseVisualizer:
         rospy.init_node('grasp_pose_visualizer', anonymous=True)
 
         # 创建Publisher用于发布Marker
-        self.marker_pub = rospy.Publisher("visualization_marker", Marker, queue_size=10)
+        self.marker_pub = rospy.Publisher("grasp_visualization_marker", Marker, queue_size=10)
 
-        # 订阅/best_grasp_pose话题
+        # 订阅/best_grasp_pose话题 | 用于获取待抓取物体的姿态
         self.pose_sub = rospy.Subscriber("/best_grasp_pose", PoseStamped, self.pose_callback)
         self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/biped_s4"
 
+        # # 订阅/object_visualization_marker话题 | 用于获取待抓取物体的实际位置
+        # self.object_real_sub = 
     def pose_callback(self, msg):
         # 接收到位置 
         rospy.loginfo("Received a new grasp pose")
@@ -29,7 +31,7 @@ class GraspPoseVisualizer:
         #     1.0, 0.0, 0.0, "Right"
         # )
         marker = self.construct_marker(
-            [(0.6 + position.x), (0.1 + position.y), (0.0 + position.z)], # 先给一个固定位置（测试抓取姿态生成稳定性）
+            [(0.4 + position.x), (0.2 + position.y), (0.1 + position.z)], # 先给一个固定位置（测试抓取姿态生成稳定性）
             [orientation.x, orientation.y, orientation.z, orientation.w],
             1.0, 0.0, 0.0, "Left"
         )
