@@ -21,9 +21,9 @@
             <param name="publish_frequency" type="double" value="50.0" />
         </node>
         <!-- Optionally, start the joint_state_publisher GUI for manual joint control -->
-        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" output="screen">
+        <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" output="screen">
             <param name="use_gui" value="true" />
-        </node>
+        </node> -->
         <!-- Optionally, start RViz for visualization -->
         <node name="rviz" pkg="rviz" type="rviz" args="-d $(find biped_s4)/config/new_robot_grasp_to_visual.rviz" />
     </group>
