@@ -3,14 +3,8 @@ a simpe demo for ros workspace Gendexgrasp_ros
 
 # build
 ```bash
-# 抓取姿态可视化Marker节点
-rosrun grasp_pose_visualizer grasp_pose_marker.py
-
-# 目标位置可视化Marker节点
-rosrun object_pose_visualizer object_pose_visualizer_node.py
-
-# 抓取ik逆解前姿态可视化 | 发布姿态到ik节点
-rosrun grasp_ik_arm_traj grasp_to_ik_node.py 
+# 抓取姿态可视化Marker节点 | 目标位置可视化Marker节点 | 抓取ik逆解前姿态可视化 | 发布姿态到ik节点
+roslaunch grasp_ik_arm_traj robot_grasp_one_start.launch
 
 # 启动ik节点
 roslaunch motion_capture_ik visualize.launch visualize:=true robot_version:=4 control_hand_side:=0 send_srv:=0
