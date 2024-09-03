@@ -9,6 +9,7 @@ from dynamic_biped.msg import robotHandPosition
 from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
 
 GLOBAL_IK_SUCCESS = False
+last_seq = None
 
 class GraspToIK:
     def __init__(self):
@@ -131,9 +132,12 @@ class GraspToIK:
             brief: 用于 发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
             param msg: 机器人轨迹
         """
+        global GLOBAL_IK_SUCCESS, last_seq
+
+        # 比较当前seq与上次的seq
         # 接收到机器人轨迹 | 代表IK逆解成功
-        rospy.loginfo("Received a new robot arm trajectory | IK Success!")
-        
+        GLOBAL_IK_SUCCESS = True
+
         # 寻找该ik下的hand_pose是不是正确的 
         if self.hand_pose is None:
             rospy.logwarn("Hand pose not received yet. Skipping this cycle.")
@@ -155,7 +159,7 @@ class GraspToIK:
         # 提取左手手指的关节弧度
         if len(self.hand_pose.position) >= 10:
             left_finger_positions = list(self.hand_pose.position[:10])
-            print("left_finger_positions : ", left_finger_positions)
+            # print("left_finger_positions : ", left_finger_positions)
         else:
             rospy.logerr("Received hand pose does not have enough positions. Expected at least 10, got %d", len(self.hand_pose.position))
             return
@@ -166,6 +170,13 @@ class GraspToIK:
         positions.extend([0.0] * remaining_joints)
         self.joint_state_msg.position = positions
 
+    def check_and_call_service(self, event):
+        global GLOBAL_IK_SUCCESS, last_seq
+        if GLOBAL_IK_SUCCESS:
+            rospy.loginfo("Calling hand control service with new finger positions.")
+            left_finger_positions = list(self.hand_pose.position[:10])
+            self.send_hand_control_service(left_finger_positions)
+
     def publish_joint_states(self, event):
         # 发布 JointState 消息
         # rospy.loginfo("Publishing joint state at 50Hz")
@@ -173,6 +184,11 @@ class GraspToIK:
         self.joint_state_pub.publish(self.joint_state_msg)
 
     def grasp_callback(self, msg):
+        global GLOBAL_IK_SUCCESS, last_seq
+
+        # 接收到机器人grasp | 默认都是显示ik失败
+        GLOBAL_IK_SUCCESS = False
+    
         # 归一化四元数
         quat = np.array([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         norm = np.linalg.norm(quat)
@@ -237,4 +253,8 @@ class GraspToIK:
 if __name__ == '__main__':
     rospy.init_node('grasp_to_ik_node', anonymous=True)
     node = GraspToIK()
+
+    # 定时器用于检查并调用服务
+    rospy.Timer(rospy.Duration(0.1), node.check_and_call_service)
+    
     rospy.spin()
