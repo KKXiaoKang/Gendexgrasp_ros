@@ -10,12 +10,22 @@ class GraspPoseVisualizer:
         # 创建Publisher用于发布Marker
         self.marker_pub = rospy.Publisher("grasp_visualization_marker", Marker, queue_size=10)
 
-        # 订阅/best_grasp_pose话题 | 用于获取待抓取物体的姿态
+        # 订阅/best_grasp_pose话题 | 用于获取待抓取物体的姿态(包含手的中心位置)
         self.pose_sub = rospy.Subscriber("/best_grasp_pose", PoseStamped, self.pose_callback)
         self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/biped_s4"
 
-        # # 订阅/object_visualization_marker话题 | 用于获取待抓取物体的实际位置
-        # self.object_real_sub = 
+        # 订阅/object_visualization_marker话题 | 用于获取待抓取物体的实际位置
+        self.object_real_sub = rospy.Subscriber("object_visualization_marker", Marker, self.object_real_callback)
+        self.object_real_msg_info = Marker()
+
+    def object_real_callback(self, msg):
+        # 接收到物体的实际位置
+        rospy.loginfo("Received a new object real pose")
+        
+        # 构建物体实际位置的数组
+        self.object_real_msg_info.pose = msg.pose
+        self.object_real_msg_info.header = msg.header
+
     def pose_callback(self, msg):
         # 接收到位置 
         rospy.loginfo("Received a new grasp pose")
@@ -30,8 +40,14 @@ class GraspPoseVisualizer:
         #     [orientation.x, orientation.y, orientation.z, orientation.w],
         #     1.0, 0.0, 0.0, "Right"
         # )
+
+        # 构建最终抓取位置[物体实际位置+手部中心位置]
+        final_grasp_pose_x = self.object_real_msg_info.pose.position.x + position.x
+        final_grasp_pose_y = self.object_real_msg_info.pose.position.y + position.y
+        final_grasp_pose_z = self.object_real_msg_info.pose.position.z + position.z
+
         marker = self.construct_marker(
-            [(0.4 + position.x), (0.2 + position.y), (0.1 + position.z)], # 先给一个固定位置（测试抓取姿态生成稳定性）
+            [final_grasp_pose_x, final_grasp_pose_y, final_grasp_pose_z], 
             [orientation.x, orientation.y, orientation.z, orientation.w],
             1.0, 0.0, 0.0, "Left"
         )
@@ -39,6 +55,9 @@ class GraspPoseVisualizer:
             self.marker_pub.publish(marker)
 
     def construct_marker(self, arm_pose_p, arm_pose_q, r, g, b, side):
+        """
+            处理Marker信息
+        """
         if len(arm_pose_q) != 4 or len(arm_pose_p) != 3:
             rospy.logerr("Invalid arm pose, cannot construct marker")
             return None
