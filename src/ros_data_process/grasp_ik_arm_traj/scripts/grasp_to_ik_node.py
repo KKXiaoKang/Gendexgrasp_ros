@@ -27,6 +27,18 @@ class GraspToIK:
         # 模型路径
         self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/biped_s4/meshes/l_hand_roll.STL"
 
+        # 增加真实的物体的姿态
+        self.object_real_sub = rospy.Subscriber("object_visualization_marker", Marker, self.object_real_callback)
+        self.object_real_msg_info = Marker()
+
+    def object_real_callback(self, msg):
+        # 接收到物体的实际位置
+        # rospy.loginfo("Received a new object real pose")
+        
+        # 构建物体实际位置的数组
+        self.object_real_msg_info.pose = msg.pose
+        self.object_real_msg_info.header = msg.header
+
     def grasp_callback(self, msg):
         # 归一化四元数
         quat = np.array([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
@@ -40,7 +52,11 @@ class GraspToIK:
         ik_msg = twoArmHandPose()
 
         # 假设姿态是针对右手的
-        ik_msg.left_pose.pos_xyz = [(msg.pose.position.x + 0.4), (msg.pose.position.y + 0.2), (msg.pose.position.z + 0.1)]
+        final_grasp_pose_x = self.object_real_msg_info.pose.position.x + msg.pose.position.x
+        final_grasp_pose_y = self.object_real_msg_info.pose.position.y + msg.pose.position.y
+        final_grasp_pose_z = self.object_real_msg_info.pose.position.z + msg.pose.position.z
+
+        ik_msg.left_pose.pos_xyz = [final_grasp_pose_x, final_grasp_pose_y, final_grasp_pose_z]
         ik_msg.left_pose.quat_xyzw = quat.tolist()
 
         # 简单起见，将肘部位置和关节角度设置为零

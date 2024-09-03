@@ -15,7 +15,7 @@ class ObjectPoseVisualizer:
 
     def callback(self, data):
         # receive data
-        rospy.loginfo("Received data")
+        # rospy.loginfo("Received data")
         # process
         for detection in data.detections:
             pose = detection.results[0].pose.pose

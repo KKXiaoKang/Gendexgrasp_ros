@@ -20,7 +20,7 @@ class GraspPoseVisualizer:
 
     def object_real_callback(self, msg):
         # 接收到物体的实际位置
-        rospy.loginfo("Received a new object real pose")
+        # rospy.loginfo("Received a new object real pose")
         
         # 构建物体实际位置的数组
         self.object_real_msg_info.pose = msg.pose
@@ -28,7 +28,7 @@ class GraspPoseVisualizer:
 
     def pose_callback(self, msg):
         # 接收到位置 
-        rospy.loginfo("Received a new grasp pose")
+        # rospy.loginfo("Received a new grasp pose")
 
         # 提取位置和姿态数据
         position = msg.pose.position
