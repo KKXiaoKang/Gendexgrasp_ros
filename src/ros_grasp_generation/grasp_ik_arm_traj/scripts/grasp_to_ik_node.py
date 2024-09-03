@@ -5,6 +5,10 @@ from motion_capture_ik.msg import twoArmHandPose, armHandPose
 from visualization_msgs.msg import Marker
 import numpy as np
 import math
+from dynamic_biped.msg import robotHandPosition
+from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
+
+GLOBAL_IK_SUCCESS = False
 
 class GraspToIK:
     def __init__(self):
@@ -22,6 +26,10 @@ class GraspToIK:
         # 发布 IK 命令
         self.ik_pub = rospy.Publisher('/ik/two_arm_hand_pose_cmd', twoArmHandPose, queue_size=10)
         
+        # TODO:增加灵巧手实物控制服务
+        rospy.wait_for_service('/hand_sdk_control_service')
+        self.hand_control_client = rospy.ServiceProxy('/hand_sdk_control_service', handPosService)       
+
         # 发布机器人的关节状态
         self.joint_state_pub = rospy.Publisher('/joint_states', JointState, queue_size=10)
         
@@ -42,6 +50,41 @@ class GraspToIK:
 
         # 50Hz频率发布JointState
         rospy.Timer(rospy.Duration(0.02), self.publish_joint_states)
+
+    def send_hand_control_service(self, hand_positions):
+        try:
+            """
+                客户端传入手指的弧度值，发送给服务端，服务端控制会自动做角度的转换，并且控制灵巧手
+            """
+            # 创建服务请求对象
+            request = handPosServiceRequest()
+
+            # 构建 Header
+            request.header = rospy.Header()
+            request.header.stamp = rospy.Time.now()
+
+            # 将手指弧度值转换为角度
+            hand_positions_degrees = [math.degrees(pos) for pos in hand_positions]
+            
+            # 选择 hand_positions 中的第1, 2, 3, 5, 7, 9 作为控制维度
+            selected_positions = [int(hand_positions_degrees[i]) for i in [0, 1, 2, 4, 6, 8]]
+
+            # 将 selected_positions 中的值限制在 0 到 255 之间
+            selected_positions = [max(0, min(255, pos)) for pos in selected_positions]
+            print(" selected_positions : ", selected_positions)
+
+            # 设置 left_hand_position 和 right_hand_position
+            request.left_hand_position = selected_positions
+            request.right_hand_position = [0] * 6  # 假设右手没有动作
+
+            # 调用服务并处理响应
+            response = self.hand_control_client(request)
+            if response.result:
+                rospy.loginfo("Hand control command successfully sent to the real hand controller.")
+            else:
+                rospy.logwarn("Failed to send hand control command.")
+        except rospy.ServiceException as e:
+            rospy.logerr("Service call failed: %s", str(e))
 
     def define_joint_names(self):
         return [
@@ -84,6 +127,14 @@ class GraspToIK:
         self.object_real_msg_info.header = msg.header
 
     def traj_callback(self, msg):
+        """
+            brief: 用于 发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
+            param msg: 机器人轨迹
+        """
+        # 接收到机器人轨迹 | 代表IK逆解成功
+        rospy.loginfo("Received a new robot arm trajectory | IK Success!")
+        
+        # 寻找该ik下的hand_pose是不是正确的 
         if self.hand_pose is None:
             rospy.logwarn("Hand pose not received yet. Skipping this cycle.")
             return
@@ -93,7 +144,7 @@ class GraspToIK:
             left_arm_positions = list(msg.position[:7])
             right_arm_positions = list(msg.position[7:14])
 
-            # TODO: 角度转弧度
+            # 角度转弧度
             left_arm_positions = [math.radians(angle) for angle in left_arm_positions]
             right_arm_positions = [math.radians(angle) for angle in right_arm_positions]
 
