@@ -10,7 +10,7 @@ roslaunch grasp_ik_arm_traj robot_grasp_one_start.launch
 roslaunch motion_capture_ik visualize.launch visualize:=true robot_version:=4 control_hand_side:=0 send_srv:=0
 
 # 发布虚拟物体的坐标
-cd /home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_data_process/object_pose_visualizer/scripts
+cd /home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_pose_visualizer/object_pose_visualizer/scripts
 python3 publish_object_pose.py
 ```
 
