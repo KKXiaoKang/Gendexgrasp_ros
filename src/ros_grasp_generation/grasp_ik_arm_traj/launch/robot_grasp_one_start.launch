@@ -13,4 +13,9 @@
     <node name="grasp_to_ik_node" pkg="grasp_ik_arm_traj" type="grasp_to_ik_node.py" output="screen">
         <!-- 这里可以添加任何需要的参数 -->
     </node>
+
+    <!-- 将抓取的实际命令传输给实物控制服务调用 -->
+    <node name="hand_sdk_control_server" pkg="hand_sdk_control" type="hand_sdk_control_server.py" output="screen">
+        <!-- 这里可以添加任何需要的参数 -->
+    </node>
 </launch>
