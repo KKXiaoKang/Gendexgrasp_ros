@@ -254,7 +254,9 @@ if __name__ == '__main__':
     rospy.init_node('grasp_to_ik_node', anonymous=True)
     node = GraspToIK()
 
-    # 定时器用于检查并调用服务
+    # 定时器用于检查并调用灵巧手抓取服务
     rospy.Timer(rospy.Duration(0.1), node.check_and_call_service)
     
+    # TODO:增加一个定时器用于逆解成功后 | 服务调用：通知gendexgrasp可以停止生成姿态了
+
     rospy.spin()

@@ -3,7 +3,7 @@ a simpe demo for ros workspace Gendexgrasp_ros
 
 # build
 ```bash
-# 抓取姿态可视化Marker节点 | 目标位置可视化Marker节点 | 抓取ik逆解前姿态可视化 | 发布姿态到ik节点
+# 抓取姿态可视化Marker节点 | 目标位置可视化Marker节点 | 抓取ik逆解前姿态可视化 | 发布姿态到ik节点 | 创建灵巧手调用服务端
 roslaunch grasp_ik_arm_traj robot_grasp_one_start.launch
 
 # 启动ik节点
