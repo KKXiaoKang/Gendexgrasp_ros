@@ -1,4 +1,0 @@
-int64 a
----
-geometry_msgs/PoseArray pose_array
-

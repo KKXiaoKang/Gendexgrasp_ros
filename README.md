@@ -17,3 +17,12 @@ python3 publish_object_pose.py
 # 请注意（运行环境下的numpy环境的不同）
 * 在运行drake-visualizer之前，numpy所需环境为1.20.0
 * 但是在运行gendexgrasp的时候，numpy所需的版本为1.24.4
+
+## for water_bottle_grasp
+```bash
+# 生成抓取图（根据指定的面片索引进行接触图的生成）
+python inf_cvae.py --pre_process sharp_lift --s_model PointNetCVAE_SqrtFullRobots --num_per_object 2 --comment leju
+
+# 根据抓取图不断生成抓取姿态ros信息
+python run_grasp_gen_ros.py --robot_name lejuhand --max_iter 100 --num_particles 32 --learning_rate 5e-3 --init_rand_scale 0.5 --object_name contactdb+water_bottle --cmap_dir logs_inf_cvae/PointNetCVAE_SqrtFullRobots/sharp_lift/leju
+```
