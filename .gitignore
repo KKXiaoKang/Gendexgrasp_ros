@@ -166,3 +166,10 @@ build/
 devel/
 .catkin_tools/
 logs/
+
+# 模型屏蔽
+ros_vision/SAM-6D/SAM-6D/Instance_Segmentation_Model/checkpoints
+ros_vision/SAM-6D/SAM-6D/Pose_Estimation_Model/checkpoints
+# 数据屏蔽
+ros_vision/SAM-6D/SAM-6D/Data
+ros_vision/SAM-6D/SAM-6D/Data_Example
