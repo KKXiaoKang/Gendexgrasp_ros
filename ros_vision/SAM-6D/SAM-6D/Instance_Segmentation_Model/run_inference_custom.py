@@ -300,6 +300,7 @@ def run_inference(segmentor_model, output_dir, cad_path, rgb_path, depth_path, c
 
     # 加载 CAD 模型并采样点云
     mesh = trimesh.load_mesh(cad_path)
+    print(" 加载 CAD 模型并采样点云 cad_path : ", cad_path)
     model_points = mesh.sample(2048).astype(np.float32) / 1000.0
     model.ref_data["pointcloud"] = torch.tensor(model_points).unsqueeze(0).data.to(device)
     
@@ -342,7 +343,8 @@ if __name__ == "__main__":
     parser.add_argument("--rgb_path", nargs="?", help="Path to RGB image")
     parser.add_argument("--depth_path", nargs="?", help="Path to Depth image(mm)")
     parser.add_argument("--cam_path", nargs="?", help="Path to camera information")
-    parser.add_argument("--stability_score_thresh", default=0.97, type=float, help="stability_score_thresh of SAM")
+    # parser.add_argument("--stability_score_thresh", default=0.50, type=float, help="stability_score_thresh of SAM")
+    parser.add_argument("--stability_score_thresh", default=0.97, type=float, help="stability_score_thresh of SAM") 
     args = parser.parse_args()
     os.makedirs(f"{args.output_dir}/sam6d_results", exist_ok=True)
     run_inference(
