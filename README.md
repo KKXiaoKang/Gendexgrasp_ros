@@ -12,6 +12,9 @@ roslaunch motion_capture_ik visualize.launch visualize:=true robot_version:=4 co
 # 发布虚拟物体的坐标
 cd /home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_pose_visualizer/object_pose_visualizer/scripts
 python3 publish_object_pose.py
+
+# 发布真实物体的坐标（启动相机 | 启动yolo-onnxruntime）
+roslaunch grasp_ik_arm_traj sensor_robot_enable.launch
 ```
 
 # 请注意（运行环境下的numpy环境的不同）
