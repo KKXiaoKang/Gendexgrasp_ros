@@ -106,7 +106,7 @@ def broadcast_tf_transforms(detection_msg, tf_broadcaster):
             # 创建 TF 转换
             transform = geometry_msgs.msg.TransformStamped()
             transform.header.stamp = rospy.Time.now()
-            transform.header.frame_id = "head_camera_color_optical_frame"
+            transform.header.frame_id = "camera_color_optical_frame"
             transform.child_frame_id = f"camera_object_{detection.results[0].id}"  # 使用检测到的对象 ID 作为子帧 ID
             transform.transform.translation.x = x
             transform.transform.translation.y = y
@@ -143,7 +143,7 @@ def process_frame(yoloseg, input_image, depth_image, camera_info):
     # 创建Detection2DArray消息
     detection_msg = Detection2DArray()
     detection_msg.header.stamp = rospy.Time.now()
-    detection_msg.header.frame_id = "head_camera_color_optical_frame"
+    detection_msg.header.frame_id = "camera_color_optical_frame"
 
     mask_msgs = []
     for box, score, class_id, mask in zip(boxes, scores, class_ids, masks):
