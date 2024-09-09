@@ -27,11 +27,13 @@ from sensor_msgs.msg import JointState
 import numpy as np
 
 import glob
-
+import re
 from ros_gendexgrasp.srv import dex_gengrasp_srv, dex_gengrasp_srvResponse, dex_gengrasp_srvRequest
 
 SEED_NUM = 0  # 全局随机种子
 STATUS = 0    # 全局状态
+GRASP_INDEX = 0  # 全局抓取姿态的索引
+FIRST_INIT_FALG = True  # 全局是否第一次初始化
 
 class GenGraspService:
     def __init__(self, args):
@@ -155,18 +157,52 @@ class GenGraspService:
             set_global_seed(SEED_NUM)
             self.gen_grasp_map()
 
+    # 提取文件名中的数字进行排序
+    def extract_number(self, filename):  # 加入 self 参数
+        # 使用正则表达式从文件名中提取数字
+        numbers = re.findall(r'\d+', filename)
+        return int(numbers[-1]) if numbers else -1
+
+    def set_global_grasp_index(self, index):
+        global GRASP_INDEX
+        GRASP_INDEX = index
+
+    def get_global_grasp_index(self):
+        global GRASP_INDEX
+        return GRASP_INDEX
+    
     def gen_grasp_map(self):
         # 引入全局状态
         global STATUS
+        global GRASP_INDEX
+        global FIRST_INIT_FALG
 
-        cmap_files = sorted(glob.glob(os.path.join(self.args.cmap_dir, 'contactdb+water_bottle_sample_*.pt')))
-        print(" cmap_files :", cmap_files)
-        for cmap_file in cmap_files:
+        cmap_files = sorted(glob.glob(os.path.join(self.args.cmap_dir, 'contactdb+water_bottle_sample_*.pt')), key=self.extract_number)  # 调用 self.extract_number
+        # print("cmap_files:", cmap_files)
+
+        if GRASP_INDEX >= len(cmap_files):
+            print(f"GRASP_INDEX ({GRASP_INDEX}) exceeds the number of files ({len(cmap_files)}). Resetting to 0.")
+            GRASP_INDEX = 0  # 如果索引超出文件数量，重置为0
+        
+        # 判断是否为全局第一次初始化
+        if FIRST_INIT_FALG == True:
+            GRASP_INDEX = GRASP_INDEX
+        elif FIRST_INIT_FALG == False:
+            GRASP_INDEX = GRASP_INDEX + 1
+
+        for idx, cmap_file in enumerate(cmap_files[GRASP_INDEX:], start=GRASP_INDEX):
+            # first init过后就会把标志位设置为False
+            FIRST_INIT_FALG = False
+            
             # 如果全局状态为0，则退出抓取姿态生成
             if STATUS == 0:
                 print( " 接收到grasp服务停止调用的信息，正在退出......")
                 break
-            
+            # 处理手部姿态 | 索引+1
+            GRASP_INDEX = idx
+            self.set_global_grasp_index(GRASP_INDEX)
+            print( " GRASP_INDEX : ", self.get_global_grasp_index())
+
             print(f"Processing {cmap_file}...")
             try:
                 cmap_dataset = torch.load(cmap_file)
