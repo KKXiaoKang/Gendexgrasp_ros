@@ -29,6 +29,7 @@ import numpy as np
 import glob
 import re
 from ros_gendexgrasp.srv import dex_gengrasp_srv, dex_gengrasp_srvResponse, dex_gengrasp_srvRequest
+from ros_gendexgrasp.srv import dex_grasp_index, dex_grasp_indexResponse, dex_grasp_indexRequest
 
 SEED_NUM = 0  # 全局随机种子
 STATUS = 0    # 全局状态
@@ -50,13 +51,35 @@ class GenGraspService:
         self.service = rospy.Service(
             '/gendex_grasp_service', dex_gengrasp_srv, self.handle_gendex_grasp_service
         )
+        
+        # ros服务 | 设置从第几个姿态开始生成 | 获取当前是第几个姿态 
+        self.set_grasp_index_service = rospy.Service(
+            '/set_grasp_index', dex_grasp_index, self.handle_set_grasp_index_service
 
+        )
+        self.get_grasp_index_service = rospy.Service(
+            '/get_grasp_index', dex_grasp_index, self.handle_get_grasp_index_service
+        )
+
+        # 模型初始化
         self.model = AdamGrasp(robot_name=args.robot_name, writer=self.writer, contact_map_goal=None,
                                num_particles=args.num_particles, init_rand_scale=args.init_rand_scale,
                                max_iter=args.max_iter, steps_per_iter=args.steps_per_iter, learning_rate=args.learning_rate,
                                device=self.device, energy_func_name=args.energy_func)
         self.handmodel = get_handmodel(robot=args.robot_name, batch_size=1, device=self.device)
         self.object_vis_data = plot_mesh_from_name(args.object_name)
+
+    def handle_set_grasp_index_service(self, req):
+        global GRASP_INDEX
+        GRASP_INDEX = req.set_grasp_index
+
+        rospy.loginfo(f"Set grasp index to {GRASP_INDEX}")
+        return dex_grasp_indexResponse(result=True, get_grasp_index=0)
+
+    def handle_get_grasp_index_service(self, req):
+        global GRASP_INDEX
+        rospy.loginfo(f"Get grasp index: {GRASP_INDEX}")
+        return dex_grasp_indexResponse(result=True, get_grasp_index=GRASP_INDEX)
 
     def handle_gendex_grasp_service(self, req):
         global SEED_NUM

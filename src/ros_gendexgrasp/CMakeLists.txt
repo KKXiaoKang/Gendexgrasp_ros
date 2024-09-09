@@ -61,6 +61,7 @@ add_service_files(
   FILES
   dex_contract_srv.srv
   dex_gengrasp_srv.srv
+  dex_grasp_index.srv
 )
 
 ## Generate actions in the 'action' folder
