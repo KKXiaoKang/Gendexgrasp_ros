@@ -1,6 +1,7 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Int32
 from motion_capture_ik.msg import twoArmHandPose, armHandPose
 from visualization_msgs.msg import Marker
 import numpy as np
@@ -27,6 +28,9 @@ class GraspToIK:
         # 发布 IK 命令
         self.ik_pub = rospy.Publisher('/ik/two_arm_hand_pose_cmd', twoArmHandPose, queue_size=10)
         
+        # 发布ik是否成功的全局流标志位
+        self.ik_status_pub = rospy.Publisher('/ik_solver_status', Int32, queue_size=10)
+
         # TODO:增加灵巧手实物控制服务
         rospy.wait_for_service('/hand_sdk_control_service')
         self.hand_control_client = rospy.ServiceProxy('/hand_sdk_control_service', handPosService)       
@@ -173,6 +177,7 @@ class GraspToIK:
     def check_and_call_service(self, event):
         global GLOBAL_IK_SUCCESS, last_seq
         if GLOBAL_IK_SUCCESS:
+            # ik成功，告知灵巧手控制节点实物控制灵巧手
             rospy.loginfo("Calling hand control service with new finger positions.")
             left_finger_positions = list(self.hand_pose.position[:10])
             self.send_hand_control_service(left_finger_positions)
@@ -182,6 +187,17 @@ class GraspToIK:
         # rospy.loginfo("Publishing joint state at 50Hz")
         self.joint_state_msg.header.stamp = rospy.Time.now()
         self.joint_state_pub.publish(self.joint_state_msg)
+
+    def pub_ik_success_service(self, event):
+        global GLOBAL_IK_SUCCESS
+        if GLOBAL_IK_SUCCESS:
+            ik_flag = 1 
+        else:
+            ik_flag = 0
+        # 发布话题
+        ik_status_msg = Int32()
+        ik_status_msg.data = ik_flag
+        self.ik_status_pub.publish(ik_status_msg)
 
     def grasp_callback(self, msg):
         global GLOBAL_IK_SUCCESS, last_seq
@@ -258,5 +274,6 @@ if __name__ == '__main__':
     rospy.Timer(rospy.Duration(0.1), node.check_and_call_service)
     
     # TODO:增加一个定时器用于逆解成功后 | 服务调用：通知gendexgrasp可以停止生成姿态了
+    rospy.Timer(rospy.Duration(0.1), node.pub_ik_success_service)
 
     rospy.spin()
