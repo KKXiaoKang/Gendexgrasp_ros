@@ -14,6 +14,7 @@ from ros_gendexgrasp.srv import dex_contract_srv, dex_contract_srvResponse, dex_
 from ros_gendexgrasp.srv import dex_gengrasp_srv, dex_gengrasp_srvResponse, dex_gengrasp_srvRequest
 from ros_gendexgrasp.srv import dex_grasp_index, dex_grasp_indexResponse, dex_grasp_indexRequest
 
+from arm_specific_actions import robot_arm_action # 预设计轨迹
 from dynamic_biped.srv import changeArmCtrlMode
 import time
 
@@ -30,8 +31,7 @@ robot_instance = kuavo("4_2_kuavo")
     Point_2 = angle_to_rad([ 30, 90, 0, -50, 90, -30, 0])
     Point_3 = angle_to_rad([-15, 70, 0, -50, 45, -40, 0])
     Point_4 = angle_to_rad([-50, 50, 0, -30,  0, -50, 0])
-    Point_5 = angle_to_rad([-50,  0, 0, -30,  0, -50, 0])
-    [-10,0,0,-70,-90,0,0,-10,0,0,-70,90,0,0]
+    Point_5 = angle_to_rad([-10,  0, 0, -70,-90,   0, 0])
 """
 csv_data = {
     'init': [
@@ -56,6 +56,11 @@ gendexgrasp_factory_get_index_client = rospy.ServiceProxy(
     "/get_grasp_index", dex_grasp_index
 )
 
+# 根据随机种子生成不同的接触图
+gendexgrasp_contact_factory_client = rospy.ServiceProxy(
+    "/gendex_contact_service", dex_contract_srv
+)
+
 def IK_status_callback(data):
     global IK_SUCCESS_FLAG
     if data.data == 1:
@@ -77,6 +82,7 @@ def parse_csv_data(data):
 def test_arm_init(robot_instance):
     """
         kuavo -- 手部 /kuavo_arm_target_poses 控制
+        从armTargetPose 转换为 moveit固定轨迹规划
     """
     data = csv_data['init']
     time_data, traj_array = parse_csv_data(data)
@@ -211,13 +217,14 @@ def gendexgrasp():
         （3） 监听/ik_solver_status 查看是否成功
         （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续
     """
-    # （1） 设置手臂初始位置
-    test_arm_init(robot_instance)
-    input( " 请等待机器人robot arm 去到初始位置 ---------完成后Enter键继续")
-
-    # （2） 调用/gendex_grasp_service 开始生成姿态
     arm_mode = True
     call_change_arm_ctrl_mode_service(arm_mode)
+
+    # （1） 设置手臂初始位置
+    robot_arm_action(robot_instance, 2, "zero_go_to_prepare")
+    input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
+
+    # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子
     time.sleep(1)
     handle_gendexgrasp_factory_status(status=1, seed_num=42)
 
@@ -231,6 +238,41 @@ def gendexgrasp():
     print_dividing_line()
     console.print(f"[green]IK_SUCCESS_FLAG is True, IK_SUCCESS_INDEX_GRASP is {ik_success_index_grasp}[/green]")
     input( " IK求解成功，姿态解算已经完成 ---------完成后Enter键继续")
+
+    # （5）完成抓取姿态
+    robot_arm_action(robot_instance, 2, "prepare_go_to_zero")
+    input( " 请等待机器人robot arm 回到零位 ---------完成后Enter键即可结束")
+
+def product_contact_map(seed_num=42, contact_num=10):
+    """
+        根据输入的随机种子和接触点数量，产生接触图
+    """
+    try:
+        # 创建服务请求对象
+        request = dex_contract_srvRequest()
+        
+        # 设置 Header
+        request.header = Header()
+        request.header.stamp = rospy.Time.now()  # 当前时间戳
+        request.header.frame_id = "world"  # 可根据需要修改
+        
+        # 设置随机种子和接触点数量
+        request.seed_num = seed_num
+        request.contact_num = contact_num
+        
+        # 调用服务，获取响应
+        response = gendexgrasp_contact_factory_client(request)
+
+        if response.result:
+            rospy.loginfo("Contact map generated successfully.")
+        else:
+            rospy.logwarn("Failed to generate contact map.")
+        
+        return response.result
+
+    except rospy.ServiceException as e:
+        rospy.logerr("Service call failed: %s", str(e))
+        return None
 
 class Menu:
     def __init__(
@@ -249,6 +291,7 @@ class Menu:
             choices=[
                 "开启手臂规划" if not arm_mode else "关闭手臂规划",
                 "开始进行Gendexgrasp抓取 ",
+                "生成Gendexgrasp接触图", 
                 Separator(),
                 "退出",
             ],
@@ -265,6 +308,11 @@ class Menu:
         elif option == "开始进行Gendexgrasp抓取 ":
             # TODO: call gendexgrasp service
             gendexgrasp()
+        elif option == "生成Gendexgrasp接触图":
+            # TODO: call gendexgrasp factory service
+            seed_num_key = int(input("请输入随机种子的数量 --- ："))
+            map_num_key = int(input("请输入接触图的数量 --- ："))
+            product_contact_map(seed_num_key, map_num_key)
         elif option == "退出" or option is None:
             exit_menu = True
             print_dividing_line()

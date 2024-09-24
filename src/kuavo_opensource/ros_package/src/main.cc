@@ -747,7 +747,8 @@ int main(int argc, char *argv[])
 
     while (ros::ok())
     {
-        if (low_rate_count++ % 100 == 0)
+        // hz 拉高100hz
+        if (low_rate_count++ % 1 == 0)
         {
             RobotData robotData = robot.queryNewestRobotStates();
             RobotState_t state_des = robotData.state_des;
