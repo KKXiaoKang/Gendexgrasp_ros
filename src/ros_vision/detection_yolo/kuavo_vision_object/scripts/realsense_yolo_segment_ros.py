@@ -148,51 +148,52 @@ def process_frame(yoloseg, input_image, depth_image, camera_info):
     for box, score, class_id, mask in zip(boxes, scores, class_ids, masks):
         if class_id not in interested_classes:
             continue  # 忽略不感兴趣的类别
-        """
-            mask获取物体边界
-            同时输出4个角点
-        """
-        # 将 mask 转换为 CV_8UC1 格式
-        mask_8uc1 = cv2.convertScaleAbs(mask * 255)  # 将0-1的浮点数mask缩放为0-255整数
-        # 获取物体mask的边界
-        contours, _ = cv2.findContours(mask_8uc1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # """
+        #     mask获取物体边界
+        #     同时输出4个角点
+        # """
+        # # 将 mask 转换为 CV_8UC1 格式
+        # mask_8uc1 = cv2.convertScaleAbs(mask * 255)  # 将0-1的浮点数mask缩放为0-255整数
+        # # 获取物体mask的边界
+        # contours, _ = cv2.findContours(mask_8uc1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
-        """
-            contours  | 获取轮廓
-            corners | 根据轮廓获取角点
-        """
-        if contours:
-            # 使用蓝色绘制轮廓，线宽为2
-            cv2.drawContours(combined_img, contours, -1, (255, 0, 0), 2)  
+        # """
+        #     contours  | 获取轮廓
+        #     corners | 根据轮廓获取角点
+        # """
+        # if contours:
+        #     # 使用蓝色绘制轮廓，线宽为2
+        #     cv2.drawContours(combined_img, contours, -1, (255, 0, 0), 2)  
 
-            # 使用8位单通道mask作为灰度图
-            gray_mask = mask_8uc1     
+        #     # 使用8位单通道mask作为灰度图
+        #     gray_mask = mask_8uc1     
             
-            # 检测角点 
-            corners = cv2.goodFeaturesToTrack(gray_mask, maxCorners=10, qualityLevel=0.5, minDistance=7)
+        #     # 检测角点 
+        #     corners = cv2.goodFeaturesToTrack(gray_mask, maxCorners=10, qualityLevel=0.5, minDistance=7)
 
-            # 标注roi区域
-            x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
-            half_y = (y2 - y1) // 2
-            roi = mask_8uc1[y1:y1 + half_y, x1:x2]  # 提取上半部分ROI区域
-            cv2.rectangle(combined_img, (x1, y1), (x2, y1 + half_y), (0, 255, 0), 2)  # 绿色框，线宽2
+        #     # 标注roi区域
+        #     x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
+        #     half_y = (y2 - y1) // 2
+        #     roi = mask_8uc1[y1:y1 + half_y, x1:x2]  # 提取上半部分ROI区域
+        #     cv2.rectangle(combined_img, (x1, y1), (x2, y1 + half_y), (0, 255, 0), 2)  # 绿色框，线宽2
 
-            # 绘制框内所有检测到的角点
-            if corners is not None:
-                corners = np.int0(corners)
-                for i in corners:
-                    x, y = i.ravel()
-                    cv2.circle(combined_img, (x, y), 5, (0, 0, 255), -1)  # 绘制红色角点
-                    cv2.putText(combined_img, "P", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)  # 标记角点
+        #     # 绘制框内所有检测到的角点
+        #     if corners is not None:
+        #         corners = np.int0(corners)
+        #         for i in corners:
+        #             x, y = i.ravel()
+        #             cv2.circle(combined_img, (x, y), 5, (0, 0, 255), -1)  # 绘制红色角点
+        #             cv2.putText(combined_img, "P", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)  # 标记角点
 
-                # 对角点进行ROI筛选，只保留在上半部分ROI中的角点
-                roi_corners = [corner for corner in corners if y1 <= corner[0][1] < y1 + half_y]
+        #         # 对角点进行ROI筛选，只保留在上半部分ROI中的角点
+        #         roi_corners = [corner for corner in corners if y1 <= corner[0][1] < y1 + half_y]
 
-                # 绘制筛选后的角点
-                for corner in roi_corners:
-                    x, y = corner.ravel()
-                    cv2.circle(combined_img, (x, y), 5, (255, 0, 0), -1)  # 绘制绿色角点（落在ROI中的角点）
-                    cv2.putText(combined_img, "ROI", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)  # 标记筛选后的角点
+        #         # 绘制筛选后的角点
+        #         for corner in roi_corners:
+        #             x, y = corner.ravel()
+        #             cv2.circle(combined_img, (x, y), 5, (255, 0, 0), -1)  # 绘制绿色角点（落在ROI中的角点）
+        #             cv2.putText(combined_img, "ROI", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)  # 标记筛选后的角点
         
         """
             获取中心点的深度值并转换为3D坐标
@@ -214,7 +215,7 @@ def process_frame(yoloseg, input_image, depth_image, camera_info):
             depth = depth_image[v, u]
             if depth > 0:  # 检查深度值是否有效
                 x, y, z = convert_to_3d(u, v, depth, camera_info)
-                rospy.loginfo(f"Depth at ({u}, {v}): {depth} mm, 3D position: ({x}, {y}, {z})")
+                # rospy.loginfo(f"Depth at ({u}, {v}): {depth} mm, 3D position: ({x}, {y}, {z})")
                 detection.results[0].pose.pose.position.x = x
                 detection.results[0].pose.pose.position.y = y
                 detection.results[0].pose.pose.position.z = z
@@ -233,7 +234,7 @@ def process_frame(yoloseg, input_image, depth_image, camera_info):
                 detection.results[0].pose.pose.orientation.z = 0.0 
                 detection.results[0].pose.pose.orientation.w = 1.0 
 
-                rospy.logwarn(f"Invalid depth at ({u}, {v}): {depth}")
+                # rospy.logwarn(f"Invalid depth at ({u}, {v}): {depth}")
         else:
             rospy.logwarn(f"Depth image is None at ({u}, {v})")
 
