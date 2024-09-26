@@ -1,3 +1,10 @@
+"""
+
+    （1）订阅最佳抓取姿态 | 可视化
+    （2）发布IK是否成功
+    （3）与灵巧手实物控制服务器通信
+    （4）可视化当前机器人手臂状态
+"""
 import rospy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
@@ -8,9 +15,11 @@ import numpy as np
 import math
 from dynamic_biped.msg import robotHandPosition
 from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
-
+from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceRequest, ikMonitorServiceResponse
 GLOBAL_IK_SUCCESS = False
 last_seq = None
+
+IF_OPEN_MONITOR = False # True开始监听是否ik成功，False则关闭监听ik状态发布
 
 class GraspToIK:
     def __init__(self):
@@ -35,6 +44,9 @@ class GraspToIK:
         rospy.wait_for_service('/hand_sdk_control_service')
         self.hand_control_client = rospy.ServiceProxy('/hand_sdk_control_service', handPosService)       
 
+        # ik监听状态服务器
+        self.ik_status_monitor_server = rospy.Service('/ik_solver_status_monitor', ikMonitorService, self.handle_ik_monitor_request)
+
         # 发布机器人的关节状态
         self.joint_state_pub = rospy.Publisher('/joint_states', JointState, queue_size=10)
         
@@ -55,7 +67,20 @@ class GraspToIK:
 
         # 50Hz频率发布JointState
         rospy.Timer(rospy.Duration(0.02), self.publish_joint_states)
-
+    
+    def handle_ik_monitor_request(self, request):
+        global IF_OPEN_MONITOR
+        # 根据请求数据设置全局变量
+        if request.data == 1:
+            IF_OPEN_MONITOR = True
+        else:
+            IF_OPEN_MONITOR = False
+        rospy.loginfo(f"IF_OPEN_MONITOR is set to {IF_OPEN_MONITOR}")
+        # 返回操作成功的响应
+        response = ikMonitorServiceResponse()
+        response.success = True
+        return response
+    
     def send_hand_control_service(self, hand_positions):
         try:
             """
@@ -133,20 +158,18 @@ class GraspToIK:
 
     def traj_callback(self, msg):
         """
-            brief: 用于 发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
+            brief: 用于发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
             param msg: 机器人轨迹
         """
         global GLOBAL_IK_SUCCESS, last_seq
+        global IF_OPEN_MONITOR
 
         # 比较当前seq与上次的seq
         # 接收到机器人轨迹 | 代表IK逆解成功
-        GLOBAL_IK_SUCCESS = True
-
-        # 寻找该ik下的hand_pose是不是正确的 
-        if self.hand_pose is None:
-            rospy.logwarn("Hand pose not received yet. Skipping this cycle.")
-            return
-
+        if IF_OPEN_MONITOR:  # 如果为True，开始监听ik状态
+            GLOBAL_IK_SUCCESS = True
+        else:
+            GLOBAL_IK_SUCCESS = False
         # 提取左臂和右臂的关节角度
         if len(msg.position) >= 14:
             left_arm_positions = list(msg.position[:7])
@@ -155,18 +178,17 @@ class GraspToIK:
             # 角度转弧度
             left_arm_positions = [math.radians(angle) for angle in left_arm_positions]
             right_arm_positions = [math.radians(angle) for angle in right_arm_positions]
-
         else:
             rospy.logerr("Received joint trajectory does not have enough positions. Expected at least 14, got %d", len(msg.position))
             return
 
-        # 提取左手手指的关节弧度
-        if len(self.hand_pose.position) >= 10:
-            left_finger_positions = list(self.hand_pose.position[:10])
-            # print("left_finger_positions : ", left_finger_positions)
+        # 如果 hand_pose 没有接收到，或者 hand_pose.position 数组为空，就将手指的关节弧度置为 0
+        if self.hand_pose is None or len(self.hand_pose.position) < 10:
+            rospy.logwarn("Hand pose not received yet or hand pose position array is incomplete. Visualizing only arm positions.")
+            left_finger_positions = [0.0] * 10  # 假设手指关节数量为 10
         else:
-            rospy.logerr("Received hand pose does not have enough positions. Expected at least 10, got %d", len(self.hand_pose.position))
-            return
+            # 提取左手手指的关节弧度
+            left_finger_positions = list(self.hand_pose.position[:10])
 
         # 更新 joint_state_msg 的位置
         positions = left_arm_positions + left_finger_positions + right_arm_positions

@@ -7,6 +7,28 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 from tf.transformations import quaternion_from_euler, quaternion_multiply, quaternion_conjugate
 from std_msgs.msg import Header
 import math
+from geometry_msgs.msg import PoseStamped
+import geometry_msgs
+
+# 是否使用Gen6D输出姿态信息
+USE_GEN_6DOF_FLAG = True
+WHO_USE_DOF_INFO_FLAG = True
+gen6d_pose = PoseStamped()
+gen6d_pose.pose.orientation.x = 0.0 
+gen6d_pose.pose.orientation.y = 0.0 
+gen6d_pose.pose.orientation.z = 0.0 
+gen6d_pose.pose.orientation.w = 1.0
+
+# 根据需求创建Gen6D姿态订阅器
+if USE_GEN_6DOF_FLAG:
+    def gen6d_pose_callback(msg):
+        """
+            订阅回调函数
+        """
+        global gen6d_pose
+        gen6d_pose = msg
+        # rospy.loginfo(f"Received Gen6D pose: {gen6d_pose}")
+    rospy.Subscriber('/gen6d/pose', geometry_msgs.msg.PoseStamped, gen6d_pose_callback)
 
 class YoloTransform:
     def __init__(self):
@@ -35,6 +57,9 @@ class YoloTransform:
         return quat
 
     def detection_callback(self, msg):
+        global USE_GEN_6DOF_FLAG
+        global gen6d_pose
+
         try:
             # 查找坐标变换
             transform = self.tf_buffer.lookup_transform('torso', 'camera_color_optical_frame', rospy.Time(0))
@@ -68,10 +93,19 @@ class YoloTransform:
             # 使用TF变换坐标 -- 设置抓取位姿初始化，位置发送变换，姿态保持不变
             transformed_pose = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
             transformed_detection.results[0].pose.pose = transformed_pose.pose  
-            transformed_detection.results[0].pose.pose.orientation.x = 0.0
-            transformed_detection.results[0].pose.pose.orientation.y = 0.0
-            transformed_detection.results[0].pose.pose.orientation.z = 0.0
-            transformed_detection.results[0].pose.pose.orientation.w = 1.0 
+            if USE_GEN_6DOF_FLAG:
+                if WHO_USE_DOF_INFO_FLAG: # 判断谁主要使用Gen6D信息(True为相机坐标系用姿态信息，False为机器人基坐标系用姿态信息)
+                    pass
+                else:
+                    transformed_detection.results[0].pose.pose.orientation.x = gen6d_pose.pose.orientation.x  
+                    transformed_detection.results[0].pose.pose.orientation.y = gen6d_pose.pose.orientation.y  
+                    transformed_detection.results[0].pose.pose.orientation.z = gen6d_pose.pose.orientation.z  
+                    transformed_detection.results[0].pose.pose.orientation.w = gen6d_pose.pose.orientation.w  
+            else:
+                transformed_detection.results[0].pose.pose.orientation.x = 0.0
+                transformed_detection.results[0].pose.pose.orientation.y = 0.0
+                transformed_detection.results[0].pose.pose.orientation.z = 0.0
+                transformed_detection.results[0].pose.pose.orientation.w = 1.0 
 
             # 创建TransformStamped消息用于TF广播
             transform_stamped = TransformStamped()
@@ -81,7 +115,13 @@ class YoloTransform:
             transform_stamped.transform.translation.x = transformed_pose.pose.position.x
             transform_stamped.transform.translation.y = transformed_pose.pose.position.y
             transform_stamped.transform.translation.z = transformed_pose.pose.position.z
-            transform_stamped.transform.rotation.w = 1  # 单位四元数
+            if USE_GEN_6DOF_FLAG:
+                transform_stamped.transform.rotation.x = transformed_pose.pose.orientation.x
+                transform_stamped.transform.rotation.y = transformed_pose.pose.orientation.y
+                transform_stamped.transform.rotation.z = transformed_pose.pose.orientation.z
+                transform_stamped.transform.rotation.w = transformed_pose.pose.orientation.w
+            else:
+                transform_stamped.transform.rotation.w = 1  # 单位四元数
             # transform_stamped.transform.rotation = self.normalize_quaternion(transformed_pose.pose.orientation)
 
             # 广播转换

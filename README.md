@@ -18,6 +18,10 @@ roslaunch grasp_ik_arm_traj sensor_robot_enable.launch
 
 # 发布ros_gendexgrasp服务端
 roslaunch ros_gendexgrasp gendexgrasp_ros_service.launch
+
+# 发布物体姿态四元数(Gen6D)
+cd /home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/6DOF_Gen_ros
+python3 predict_realsense.py --cfg configs/gen6d_pretrain.yaml --database custom/bottle --output data/custom/bottle/test
 ```
 
 # 请注意（运行环境下的numpy环境的不同）

@@ -56,6 +56,7 @@ from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithP
 from cv_bridge import CvBridge, CvBridgeError
 import tf2_ros
 import geometry_msgs
+from geometry_msgs.msg import PoseStamped
 import os
 import sys
 sys.path.append(os.path.join(rospkg.RosPack().get_path('kuavo_vision_object'), 'scripts'))
@@ -67,6 +68,14 @@ depth_image = None
 camera_info = None
 frame_lock = threading.Lock()
 bridge = CvBridge()
+
+# 是否使用Gen6D输出姿态信息
+USE_GEN_6DOF_POSE_FLAG = True
+gen6d_pose = PoseStamped()
+gen6d_pose.pose.orientation.x = 0.0 
+gen6d_pose.pose.orientation.y = 0.0 
+gen6d_pose.pose.orientation.z = 0.0 
+gen6d_pose.pose.orientation.w = 1.0
 
 # 加载配置文件
 rospack = rospkg.RosPack()
@@ -129,6 +138,8 @@ def convert_to_3d(u, v, depth, camera_info):
 
 # 预处理、推理、后处理的函数
 def process_frame(yoloseg, input_image, depth_image, camera_info):
+    global USE_GEN_6DOF_POSE_FLAG
+    global gen6d_pose
     start_time = time.time()
     boxes, scores, class_ids, masks = yoloseg(input_image)
     combined_img = yoloseg.draw_masks(input_image)
@@ -220,10 +231,18 @@ def process_frame(yoloseg, input_image, depth_image, camera_info):
                 detection.results[0].pose.pose.position.y = y
                 detection.results[0].pose.pose.position.z = z
 
-                detection.results[0].pose.pose.orientation.x = 0.0 
-                detection.results[0].pose.pose.orientation.y = 0.0 
-                detection.results[0].pose.pose.orientation.z = 0.0 
-                detection.results[0].pose.pose.orientation.w = 1.0 
+                # TODO: 这里的姿态估计使用Gen6D推算出来的接口
+                if USE_GEN_6DOF_POSE_FLAG:
+                    # pass
+                    detection.results[0].pose.pose.orientation.x = gen6d_pose.pose.orientation.x  
+                    detection.results[0].pose.pose.orientation.y = gen6d_pose.pose.orientation.y
+                    detection.results[0].pose.pose.orientation.z = gen6d_pose.pose.orientation.z  
+                    detection.results[0].pose.pose.orientation.w = gen6d_pose.pose.orientation.w  
+                else:
+                    detection.results[0].pose.pose.orientation.x = 0.0  
+                    detection.results[0].pose.pose.orientation.y = 0.0 
+                    detection.results[0].pose.pose.orientation.z = 0.0 
+                    detection.results[0].pose.pose.orientation.w = 1.0 
             else:  # 如果深度无效，则将数值全赋值为0
                 detection.results[0].pose.pose.position.x = 0
                 detection.results[0].pose.pose.position.y = 0
@@ -299,6 +318,18 @@ def main():
     rospy.Subscriber('/camera/color/image_raw', Image, image_callback)
     rospy.Subscriber('/camera/depth/image_rect_raw', Image, depth_callback)
     rospy.Subscriber('/camera/color/camera_info', CameraInfo, camera_info_callback)
+
+    # 根据需求创建Gen6D姿态订阅器
+    if USE_GEN_6DOF_POSE_FLAG:
+        def gen6d_pose_callback(msg):
+            """
+                订阅回调函数
+            """
+            global gen6d_pose
+            gen6d_pose = msg
+            # rospy.loginfo(f"Received Gen6D pose: {gen6d_pose}")
+
+        rospy.Subscriber('/gen6d/pose', geometry_msgs.msg.PoseStamped, gen6d_pose_callback)
 
     # 初始化YOLOSeg对象
     model_path = os.path.join(rospkg.RosPack().get_path('kuavo_vision_object'), 'scripts/models/yolov5s-seg.onnx')

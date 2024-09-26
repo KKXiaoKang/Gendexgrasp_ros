@@ -14,6 +14,8 @@ from ros_gendexgrasp.srv import dex_contract_srv, dex_contract_srvResponse, dex_
 from ros_gendexgrasp.srv import dex_gengrasp_srv, dex_gengrasp_srvResponse, dex_gengrasp_srvRequest
 from ros_gendexgrasp.srv import dex_grasp_index, dex_grasp_indexResponse, dex_grasp_indexRequest
 
+from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceResponse, ikMonitorServiceRequest # ik状态监听器
+
 from arm_specific_actions import robot_arm_action # 预设计轨迹
 from dynamic_biped.srv import changeArmCtrlMode
 import time
@@ -61,6 +63,11 @@ gendexgrasp_contact_factory_client = rospy.ServiceProxy(
     "/gendex_contact_service", dex_contract_srv
 )
 
+# IK监听器打开 | 关闭
+ik_monitor_client = rospy.ServiceProxy(
+    "/ik_solver_status_monitor", ikMonitorService
+)
+
 def IK_status_callback(data):
     global IK_SUCCESS_FLAG
     if data.data == 1:
@@ -70,6 +77,7 @@ def IK_status_callback(data):
 
 ik_status_sub= rospy.Subscriber("/ik_solver_status", Int32, IK_status_callback)
 
+## ------------------------------------------ 功能函数 -------------------------------------------------- ## 
 def parse_csv_data(data):
     time_data = []
     traj_array = []
@@ -95,6 +103,26 @@ def print_dividing_line():
         "[violet]---------------------------------------------------------------------------------"
     )
 
+## ------------------------------------------ ROS服务函数 -------------------------------------------------- ## 
+def button_to_ik_monitor_service(status:int):
+    """
+        按钮映射到ik监听器服务
+        0 关闭ik监听器
+        1 打开ik监听器
+    """
+    try:
+        request = ikMonitorServiceRequest()
+        
+        request.data = status
+
+        response = ik_monitor_client(request)
+
+        if response.success:
+           rospy.loginfo("ik_monitor_service command successfully sent.")
+        else:
+            rospy.logerr("Failed to send ik_monitor_service command.")
+    except rospy.ServiceException as e:
+        rospy.logerr("ik_monitor_service Service call failed: %s", str(e))
 
 def call_change_arm_ctrl_mode_service(arm_ctrl_mode):
     global arm_mode
@@ -208,6 +236,7 @@ def handle_gendexgrasp_get_index():
         rospy.logerr("Service call failed: %s", str(e))
         return None
 
+## ------------------------------------------ 逻辑函数 -------------------------------------------------- ## 
 def gendexgrasp():
     global robot_instance
     global arm_mode
@@ -220,27 +249,31 @@ def gendexgrasp():
     arm_mode = True
     call_change_arm_ctrl_mode_service(arm_mode)
 
-    # （1） 设置手臂初始位置
-    robot_arm_action(robot_instance, 2, "zero_go_to_prepare")
+    # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
+    robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
     input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
 
-    # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子
-    time.sleep(1)
+    # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 打开IK监听
+    # TODO:调用/ik_solver_status_monitor 打开ik监听
+    button_to_ik_monitor_service(1)
+    time.sleep(2)
     handle_gendexgrasp_factory_status(status=1, seed_num=42)
 
     # （3）等待IK_SUCCESS_FLAG为真
     while not IK_SUCCESS_FLAG:
         time.sleep(0.1)
 
-    # （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续
+    # （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续 
     handle_gendexgrasp_factory_status(status=0)
     ik_success_index_grasp = handle_gendexgrasp_get_index()
     print_dividing_line()
     console.print(f"[green]IK_SUCCESS_FLAG is True, IK_SUCCESS_INDEX_GRASP is {ik_success_index_grasp}[/green]")
     input( " IK求解成功，姿态解算已经完成 ---------完成后Enter键继续")
 
-    # （5）完成抓取姿态
-    robot_arm_action(robot_instance, 2, "prepare_go_to_zero")
+    # （5）完成抓取姿态 | 关闭ik监听
+    # TODO:调用/ik_solver_status_monitor 关闭ik监听
+    button_to_ik_monitor_service(0)
+    robot_arm_action(robot_instance, 0, "prepare_go_to_zero")
     input( " 请等待机器人robot arm 回到零位 ---------完成后Enter键即可结束")
 
 def product_contact_map(seed_num=42, contact_num=10):
