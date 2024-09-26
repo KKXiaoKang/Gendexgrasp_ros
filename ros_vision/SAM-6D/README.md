@@ -86,3 +86,12 @@ Kui Jia:  [kuijia@gmail.com](kuijia@gmail.com)
 ```bash
 docker pull lihualiu/sam-6d:1.0
 ```
+
+## 配置docker环境的时候的默认变量
+```bash
+export CAD_PATH=/home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/SAM-6D/SAM-6D/Data/Example/obj_000005.ply    # path to a given cad model(mm)
+export RGB_PATH=/home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/SAM-6D/SAM-6D/Data/Example/rgb.png           # path to a given RGB image
+export DEPTH_PATH=/home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/SAM-6D/SAM-6D/Data/Example/depth.png       # path to a given depth map(mm)
+export CAMERA_PATH=/home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/SAM-6D/SAM-6D/Data/Example/camera.json    # path to given camera intrinsics
+export OUTPUT_DIR=/home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/SAM-6D/SAM-6D/Data/Example/outputs         # path to a pre-defined file for saving result
+```
