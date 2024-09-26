@@ -13,7 +13,7 @@
         <arg name="enable_infra2"       default="false"/>
         <arg name="enable_sync"   value="true"/>
         <arg name="align_depth"   value="true"/>
-        <arg name="enable_pointcloud"   value="true"/>
+        <arg name="enable_pointcloud"   value="false"/>
     </include>
     
     <!-- tf2_ros 静态转换 发布urdf里面的head_camera 和 相机坐标系下的camera_link 进行对齐 -->
