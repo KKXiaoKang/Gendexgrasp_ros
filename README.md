@@ -16,8 +16,10 @@ python3 publish_object_pose.py
 # 发布真实物体的坐标（启动相机 | 启动yolo-onnxruntime）
 roslaunch grasp_ik_arm_traj sensor_robot_enable.launch
 
-# 发布ros_gendexgrasp服务端
+# 在线生成服务端 -- 发布ros_gendexgrasp服务端
 roslaunch ros_gendexgrasp gendexgrasp_ros_service.launch
+# 离线生成服务端
+rosrun grasp_filter_gendex grasp_filter_node.py
 
 # 发布物体姿态四元数(Gen6D)
 cd /home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/6DOF_Gen_ros

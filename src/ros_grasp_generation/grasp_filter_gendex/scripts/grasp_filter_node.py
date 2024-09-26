@@ -7,18 +7,21 @@ import yaml
 import numpy as np
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Int32
 from tf.transformations import quaternion_from_matrix
+
+from grasp_filter_gendex.srv import offlineGraspButton, offlineGraspButtonResponse, offlineGraspButtonRequest
 
 # 加载配置文件
 rospack = rospkg.RosPack()
 
-# 标志位
-START_STOP_PUB_FLAG = False # 默认关闭，当True开始发布话题，False停止发布话题
-IK_SUCCESS_FLAG = False # 默认关闭，当True表示IK求解成功，False表示IK求解失败, 求解成功之后直接停止发布话题
-
 class GraspFilterNode:
     def __init__(self):
         rospy.init_node('grasp_filter_node')
+        
+        # 初始化标志位
+        self.START_STOP_PUB_FLAG = False  # 默认关闭
+        self.IK_SUCCESS_FLAG = False  # 默认关闭
         
         # Load grasp data from config.yaml
         self.config_file = os.path.join(rospack.get_path('grasp_filter_gendex'), 'scripts/config/config.yaml')
@@ -31,11 +34,44 @@ class GraspFilterNode:
         self.pose_pub = rospy.Publisher('/best_grasp_pose', PoseStamped, queue_size=10)
         self.joint_pub = rospy.Publisher('/best_hand_pos', JointState, queue_size=10)
 
+        # Subscribers
+        self.ik_status_sub = rospy.Subscriber("/ik_solver_status", Int32, self.IK_status_callback)
+
         # Set the publish rate to 10Hz
         self.publish_rate = rospy.Rate(10)
 
         # Iterator to cycle through grasp data
         self.grasp_keys = iter(self.grasp_data)
+
+        # 创建服务
+        self.grasp_service = rospy.Service('offline_grasp_service', offlineGraspButton, self.handle_grasp_service)
+
+    def IK_status_callback(self, msg):
+        """
+        监听 IK 求解状态，只有在 START_STOP_PUB_FLAG 为 True 时判断 IK 是否成功。
+        如果 IK 求解成功（msg.data == 1），将 START_STOP_PUB_FLAG 置为 False，停止发布话题。
+        """
+        if self.START_STOP_PUB_FLAG:  # 只有在标志位为 True 时才处理 IK 状态
+            if msg.data == 1:  # IK 求解成功
+                rospy.loginfo("IK solver succeeded, stopping grasp publishing.")
+                self.START_STOP_PUB_FLAG = False  # 停止发布抓取数据
+                self.IK_SUCCESS_FLAG = True  # 表示 IK 求解成功
+            else:
+                rospy.loginfo("IK solver failed.")
+
+    def handle_grasp_service(self, req):
+        """
+        处理服务请求，控制 START_STOP_PUB_FLAG 标志位。
+        """
+        if req.data == 1:
+            self.START_STOP_PUB_FLAG = True
+            rospy.loginfo("Grasp topic publishing started.")
+        elif req.data == 0:
+            self.START_STOP_PUB_FLAG = False
+            rospy.loginfo("Grasp topic publishing stopped.")
+        
+        # 返回服务响应，通知操作是否成功
+        return offlineGraspButtonResponse(success=True)
 
     def best_q_to_posestamped(self, best_q, frame_id="torso"):
         pose_msg = PoseStamped()
@@ -75,6 +111,9 @@ class GraspFilterNode:
         return robot_hand_joint_msg
 
     def publish_grasp_data(self):
+        if not self.START_STOP_PUB_FLAG:
+            return  # 当标志位为 False 时，不发布数据
+
         try:
             key = next(self.grasp_keys)
         except StopIteration:
@@ -88,11 +127,10 @@ class GraspFilterNode:
 
         self.pose_pub.publish(pose_msg)
         self.joint_pub.publish(joint_msg)
-        # rospy.loginfo(f"Published grasp data for {key}")
 
     def spin(self):
         while not rospy.is_shutdown():
-            self.publish_grasp_data()
+            self.publish_grasp_data()  # 只有在 START_STOP_PUB_FLAG 为 True 时才会发布
             self.publish_rate.sleep()  # This enforces the 10Hz rate
 
 if __name__ == "__main__":

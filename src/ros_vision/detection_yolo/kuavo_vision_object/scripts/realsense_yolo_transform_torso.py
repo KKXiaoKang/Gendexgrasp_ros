@@ -11,7 +11,7 @@ from geometry_msgs.msg import PoseStamped
 import geometry_msgs
 
 # 是否使用Gen6D输出姿态信息
-USE_GEN_6DOF_FLAG = True
+USE_GEN_6DOF_FLAG = False
 WHO_USE_DOF_INFO_FLAG = True
 gen6d_pose = PoseStamped()
 gen6d_pose.pose.orientation.x = 0.0 
