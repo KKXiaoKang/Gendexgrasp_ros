@@ -1,3 +1,6 @@
+"""
+    在线姿态 - 生成框架
+"""
 import rospy
 import rich
 import questionary
@@ -325,6 +328,8 @@ class Menu:
                 "开启手臂规划" if not arm_mode else "关闭手臂规划",
                 "开始进行Gendexgrasp抓取 ",
                 "生成Gendexgrasp接触图", 
+                "单独调用姿态生成 | 开始",
+                "单独调用姿态生成 | 停止",
                 Separator(),
                 "退出",
             ],
@@ -346,6 +351,10 @@ class Menu:
             seed_num_key = int(input("请输入随机种子的数量 --- ："))
             map_num_key = int(input("请输入接触图的数量 --- ："))
             product_contact_map(seed_num_key, map_num_key)
+        elif option == "单独调用姿态生成 | 开始":
+            handle_gendexgrasp_factory_status(status=1, seed_num=42)
+        elif option == "单独调用姿态生成 | 停止":
+            handle_gendexgrasp_factory_status(status=0)
         elif option == "退出" or option is None:
             exit_menu = True
             print_dividing_line()

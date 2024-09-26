@@ -28,8 +28,8 @@ class HandSDKControlServer:
             left_hand_position, right_hand_position
         ))
 
-        # 等待3s
-        time.sleep(3)
+        # 等待5s - 让机械臂运动到位
+        time.sleep(5)
 
         # 发布到 /control_robot_hand_position 话题
         hand_position_msg = robotHandPosition()

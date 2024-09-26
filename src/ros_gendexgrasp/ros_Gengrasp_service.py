@@ -248,15 +248,19 @@ class GenGraspService:
                             'i_sample': i_sample}
                 torch.save(i_record, os.path.join(self.tra_dir, f'tra-{object_name}-{i_sample}.pt'))
                 best_q = q_tra[energy.argmin(), -1, :].unsqueeze(0)
+                # 将best_q保存到yaml文件中
                 self.save_best_q_to_yaml(best_q, object_name, i_sample)
+                # html可视化
                 self.handmodel.update_kinematics(q=best_q)
                 vis_data = self.handmodel.get_plotly_data(color='pink', opacity=1.0)
                 vis_data += [self.object_vis_data]
                 fig = go.Figure(data=vis_data)
                 fig.write_html(os.path.join(self.vis_dir, f'grasppose-{object_name}-{i_sample}.html'))
+                # 发布抓取姿态
                 pose_msg = self.best_q_to_posestamped(best_q)
                 self.pose_pub.publish(pose_msg)
                 rospy.loginfo(f"Published best grasp pose for {object_name}-{i_sample}")
+                # 发布灵巧手的手指数据
                 hand_msg = self.best_q_to_posehand(best_q)
                 self.hand_pos_pub.publish(hand_msg)
                 rospy.loginfo(f"Published best grasp hand_msg 灵巧手 for {object_name}-{i_sample}")
