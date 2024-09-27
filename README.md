@@ -8,22 +8,24 @@ roslaunch grasp_ik_arm_traj robot_grasp_one_start.launch
 
 # 启动ik节点
 roslaunch motion_capture_ik visualize.launch visualize:=true robot_version:=4 control_hand_side:=0 send_srv:=0
-
-# 旧：发布虚拟物体的坐标
-cd /home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_pose_visualizer/object_pose_visualizer/scripts
-python3 publish_object_pose.py
+roslaunch motion_capture_ik visualize.launch control_hand_side:=2 send_srv:=0 eef_z_bias:=-0.15 visualize:=1 enable_quest3:=0 use_cxx:=1 # 新节点
 
 # 发布真实物体的坐标（启动相机 | 启动yolo-onnxruntime）
 roslaunch grasp_ik_arm_traj sensor_robot_enable.launch
 
 # 在线生成服务端 -- 发布ros_gendexgrasp服务端
 roslaunch ros_gendexgrasp gendexgrasp_ros_service.launch
+
 # 离线生成服务端
 rosrun grasp_filter_gendex grasp_filter_node.py
 
 # 发布物体姿态四元数(Gen6D)
 cd /home/lab/GenDexGrasp/Gendexgrasp_ros/ros_vision/6DOF_Gen_ros
 python3 predict_realsense.py --cfg configs/gen6d_pretrain.yaml --database custom/bottle --output data/custom/bottle/test
+
+# 运行演示demo
+cd /home/lab/GenDexGrasp/Gendexgrasp_ros/scripts
+python3 demo_offline.py
 ```
 
 # 请注意（运行环境下的numpy环境的不同）

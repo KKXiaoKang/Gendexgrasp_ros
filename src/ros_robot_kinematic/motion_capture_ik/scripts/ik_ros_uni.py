@@ -332,12 +332,14 @@ class IkRos:
                 if time_cost >= 10.0:
                     print(f"\033[91m The time-cost of ik is {1e3*time_cost:.2f} ms !!!\033[0m")
                 self.pub_time_cost.publish(Float32(1e3 * time_cost))
-                if q_now is not None:
+                if q_now is not None and self.__recieved_new_target_pose:
+                    self.__recieved_new_target_pose = False
                     msg = Float32MultiArray()
                     msg.data = q_now[-14:] * 180.0 / np.pi
                     self.pub_origin_joint.publish(msg)
                     arm_q_filtered = self.limit_angle(q_now[-14:])
-                    arm_q_filtered = self.limit_angle_by_velocity(q_last[-14:], arm_q_filtered, vel_limit=720.0)
+                    # # 限制角速度
+                    # arm_q_filtered = self.limit_angle_by_velocity(q_last[-14:], arm_q_filtered, vel_limit=720.0)
                     msg.data = arm_q_filtered * 180.0 / np.pi
                     self.pub_filtered_joint.publish(msg)
                     self.publish_joint_states(q_now=arm_q_filtered, q_last=q_last)

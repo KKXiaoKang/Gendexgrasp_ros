@@ -72,6 +72,12 @@ ik_monitor_client = rospy.ServiceProxy(
     "/ik_solver_status_monitor", ikMonitorService
 )
 
+# 全局ik设置器开关
+ik_global_ik_success_request_client = rospy.ServiceProxy(
+    "/set_global_ik_success", ikMonitorService
+)
+
+
 # 离线服务器开关
 offline_grasp_button_client = rospy.ServiceProxy(
     "/offline_grasp_service", offlineGraspButton
@@ -140,6 +146,27 @@ def handleOfflineGraspButton(flag):
 
     except rospy.ServiceException as e:
         rospy.logerr(f"Service call failed: {e}")
+
+def ik_global_setting_service(status:int):
+    """
+        按钮映射到ik监听器服务
+        0 设置全局ik的状态标志为 0
+        1 设置全局ik的状态标志为 1
+    """
+    try:
+        request = ikMonitorServiceRequest() 
+        
+        request.data = status
+
+        response = ik_global_ik_success_request_client(request)
+
+        if response.success:
+           rospy.loginfo("ik_global_ik_success_request_client command successfully sent.")
+        else:
+            rospy.logerr("Failed to send ik_global_ik_success_request_client command.")
+    except rospy.ServiceException as e:
+        rospy.logerr("ik_global_ik_success_request_client Service call failed: %s", str(e))
+
 
 def button_to_ik_monitor_service(status:int):
     """
@@ -284,16 +311,17 @@ def gendexgrasp():
         （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续
     """
     arm_mode = True
-    call_change_arm_ctrl_mode_service(arm_mode)
+    call_change_arm_ctrl_mode_service(arm_mode) # 开启手臂规划模式
 
     # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
     robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
     input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
 
-    # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 打开IK监听
-    # TODO:调用/ik_solver_status_monitor 打开ik监听
-    button_to_ik_monitor_service(1)
-    handleOfflineGraspButton(1)
+    # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 
+    ik_global_setting_service(0) # 全局ik状态为0
+    button_to_ik_monitor_service(1) # 打开IK监听
+    handleOfflineGraspButton(1) # 开启生成姿态
+    time.sleep(1)
 
     # （3）等待IK_SUCCESS_FLAG为真
     while not IK_SUCCESS_FLAG:

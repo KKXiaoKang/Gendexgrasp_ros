@@ -16,6 +16,7 @@ import math
 from dynamic_biped.msg import robotHandPosition
 from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
 from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceRequest, ikMonitorServiceResponse
+
 GLOBAL_IK_SUCCESS = False
 last_seq = None
 
@@ -51,6 +52,9 @@ class GraspToIK:
         # ik监听状态服务器
         self.ik_status_monitor_server = rospy.Service('/ik_solver_status_monitor', ikMonitorService, self.handle_ik_monitor_request)
 
+        # 全局ik状态设置服务器
+        self.ik_global_ik_success_server = rospy.Service('/set_global_ik_success', ikMonitorService, self.handle_ik_global_ik_success_request)
+
         # 发布机器人的关节状态
         self.joint_state_pub = rospy.Publisher('/joint_states', JointState, queue_size=10)
         
@@ -71,6 +75,19 @@ class GraspToIK:
 
         # 50Hz频率发布JointState
         rospy.Timer(rospy.Duration(0.02), self.publish_joint_states)
+    
+    def handle_ik_global_ik_success_request(self, request):
+        global GLOBAL_IK_SUCCESS
+        # 根据请求数据设置全局变量
+        if request.data == 1:
+            GLOBAL_IK_SUCCESS = True
+        else:
+            GLOBAL_IK_SUCCESS = False
+            rospy.loginfo(f"GLOBAL_IK_SUCCESS is set to {GLOBAL_IK_SUCCESS}")
+        # 返回操作成功的响应
+        response = ikMonitorServiceResponse()
+        response.success = True
+        return response
     
     def handle_ik_monitor_request(self, request):
         global IF_OPEN_MONITOR
@@ -236,7 +253,7 @@ class GraspToIK:
         ik_status_msg = Int32()
         ik_status_msg.data = ik_flag
         self.ik_status_pub.publish(ik_status_msg)
-        rospy.loginfo(f"Published IK success flag: {GLOBAL_IK_SUCCESS}")
+        # rospy.loginfo(f"Published IK success flag: {GLOBAL_IK_SUCCESS}")
 
     def grasp_callback(self, msg):
         global GLOBAL_IK_SUCCESS, last_seq
