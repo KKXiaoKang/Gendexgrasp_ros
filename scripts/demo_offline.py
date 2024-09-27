@@ -18,6 +18,7 @@ from ros_gendexgrasp.srv import dex_gengrasp_srv, dex_gengrasp_srvResponse, dex_
 from ros_gendexgrasp.srv import dex_grasp_index, dex_grasp_indexResponse, dex_grasp_indexRequest
 
 from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceResponse, ikMonitorServiceRequest # ik状态监听器
+from grasp_filter_gendex.srv import offlineGraspButton, offlineGraspButtonResponse, offlineGraspButtonRequest # 离线姿态筛选/发布器开关
 
 from arm_specific_actions import robot_arm_action # 预设计轨迹
 from dynamic_biped.srv import changeArmCtrlMode
@@ -71,6 +72,11 @@ ik_monitor_client = rospy.ServiceProxy(
     "/ik_solver_status_monitor", ikMonitorService
 )
 
+# 离线服务器开关
+offline_grasp_button_client = rospy.ServiceProxy(
+    "/offline_grasp_service", offlineGraspButton
+)
+
 def IK_status_callback(data):
     global IK_SUCCESS_FLAG
     if data.data == 1:
@@ -107,6 +113,34 @@ def print_dividing_line():
     )
 
 ## ------------------------------------------ ROS服务函数 -------------------------------------------------- ## 
+
+def handleOfflineGraspButton(flag):
+    """
+    调用 offline_grasp_service 服务，根据 flag 的值开启或关闭抓取话题发布。
+
+    :param flag: int 值，1 表示开启抓取话题发布，0 表示关闭抓取话题发布。
+    :return: None
+    """
+    try:
+        # 创建请求对象并设置 data 为传入的 flag
+        request = offlineGraspButtonRequest()
+        request.data = flag
+
+        # 调用服务并接收响应
+        response = offline_grasp_button_client(request)
+
+        # 根据响应结果输出日志
+        if response.success:
+            if flag == 1:
+                rospy.loginfo("Service call succeeded, grasp topic publishing started.")
+            else:
+                rospy.loginfo("Service call succeeded, grasp topic publishing stopped.")
+        else:
+            rospy.logwarn("Service call failed.")
+
+    except rospy.ServiceException as e:
+        rospy.logerr(f"Service call failed: {e}")
+
 def button_to_ik_monitor_service(status:int):
     """
         按钮映射到ik监听器服务
@@ -260,12 +294,14 @@ def gendexgrasp():
     # TODO:调用/ik_solver_status_monitor 打开ik监听
     button_to_ik_monitor_service(1)
     time.sleep(2)
+    handleOfflineGraspButton(1)
 
     # （3）等待IK_SUCCESS_FLAG为真
     while not IK_SUCCESS_FLAG:
         time.sleep(0.1)
 
     # （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续 
+    handleOfflineGraspButton(0)
     print_dividing_line()
     input( " IK求解成功，姿态解算已经完成 ---------完成后Enter键继续")
 

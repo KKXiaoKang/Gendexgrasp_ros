@@ -44,7 +44,7 @@ class GraspFilterNode:
         self.grasp_keys = iter(self.grasp_data)
 
         # 创建服务
-        self.grasp_service = rospy.Service('offline_grasp_service', offlineGraspButton, self.handle_grasp_service)
+        self.grasp_service = rospy.Service('/offline_grasp_service', offlineGraspButton, self.handle_grasp_service)
 
     def IK_status_callback(self, msg):
         """
