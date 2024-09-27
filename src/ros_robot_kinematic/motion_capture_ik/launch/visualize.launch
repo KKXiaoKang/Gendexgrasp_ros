@@ -10,7 +10,9 @@
 
     <node name="ik_ros_uni" pkg="motion_capture_ik" type="ik_ros_uni.py" output="screen" 
         args="--version=$(arg robot_version) --ctrl_arm_idx=$(arg control_hand_side) --ik_type_idx=$(arg ik_type_idx) --send_srv=$(arg send_srv)" 
-        launch-prefix="" />
+        launch-prefix="" >
+        <remap from="/kuavo_arm_traj" to="/robot_ik_arm_traj" />   
+    </node>
 
     <!-- visualize the robot in rviz -->
     <group if="$(arg visualize)">
@@ -25,7 +27,7 @@
             <param name="use_gui" value="true" />
         </node> -->
         <!-- Optionally, start RViz for visualization -->
-        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find biped_s4)/config/new_robot_grasp_to_visual.rviz" />
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find biped_s4)/config/robot_grasp_dof_to_visual.rviz" />
     </group>
     <group if="$(arg use_joystick)">
         <node name="quest_joystick_controller" pkg="dynamic_biped" type="quest_joystick_controller.py" output="screen"/>

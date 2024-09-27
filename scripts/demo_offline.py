@@ -293,7 +293,6 @@ def gendexgrasp():
     # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 打开IK监听
     # TODO:调用/ik_solver_status_monitor 打开ik监听
     button_to_ik_monitor_service(1)
-    time.sleep(2)
     handleOfflineGraspButton(1)
 
     # （3）等待IK_SUCCESS_FLAG为真

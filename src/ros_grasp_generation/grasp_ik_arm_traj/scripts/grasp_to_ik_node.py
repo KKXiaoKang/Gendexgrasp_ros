@@ -26,9 +26,13 @@ class GraspToIK:
         # 订阅最佳抓取姿态
         self.grasp_sub = rospy.Subscriber('/best_grasp_pose', PoseStamped, self.grasp_callback)
         
-        # 订阅机器人轨迹
+        # 订阅机器人轨迹 | ik之后的轨迹
         self.traj_sub = rospy.Subscriber('/kuavo_arm_traj', JointState, self.traj_callback)
         self.robot_arm_traj = JointState()
+
+        self.now_pub_traj_sub = rospy.Subscriber('/robot_ik_arm_traj', JointState, self.robot_traj_callback)
+        self.now_pub_traj_traj = JointState()
+        self.pub_traj_pub = rospy.Publisher('/kuavo_arm_traj', JointState, queue_size=10)
 
         # 订阅手部状态
         self.hand_pose_sub = rospy.Subscriber('/best_hand_pos', JointState, self.hand_pose_callback)
@@ -110,7 +114,8 @@ class GraspToIK:
             # 调用服务并处理响应
             response = self.hand_control_client(request)
             if response.result:
-                rospy.loginfo("Hand control command successfully sent to the real hand controller.")
+                pass
+                # rospy.loginfo("Hand control command successfully sent to the real hand controller.")
             else:
                 rospy.logwarn("Failed to send hand control command.")
         except rospy.ServiceException as e:
@@ -148,7 +153,7 @@ class GraspToIK:
     
     def hand_pose_callback(self, msg):
         # 接收到手部状态
-        rospy.loginfo("Received a new hand 灵巧手 pose")
+        # rospy.loginfo("Received a new hand 灵巧手 pose")
         self.hand_pose = msg
 
     def object_real_callback(self, msg):
@@ -156,10 +161,9 @@ class GraspToIK:
         self.object_real_msg_info.pose = msg.pose
         self.object_real_msg_info.header = msg.header
 
-    def traj_callback(self, msg):
+    def robot_traj_callback(self, msg):
         """
-            brief: 用于发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
-            param msg: 机器人轨迹
+            用于监听ik节点发过来的/robot_ik_arm_traj。如果ik监听器打开的情况下才会处理这个话题
         """
         global GLOBAL_IK_SUCCESS, last_seq
         global IF_OPEN_MONITOR
@@ -168,8 +172,20 @@ class GraspToIK:
         # 接收到机器人轨迹 | 代表IK逆解成功
         if IF_OPEN_MONITOR:  # 如果为True，开始监听ik状态
             GLOBAL_IK_SUCCESS = True
+            # TODO:将轨迹话题转发给/kuavo_arm_traj
+            self.pub_traj_pub.publish(msg)
         else:
             GLOBAL_IK_SUCCESS = False
+
+    def traj_callback(self, msg):
+        """
+            brief: 用于发布服务灵巧手服务实物可以进行控制 | 重写joint_state将手臂和灵巧手的可视化结果发布出来
+            param msg: 机器人轨迹/kuavo_arm_traj
+            主要用于可视化
+        """
+        # global GLOBAL_IK_SUCCESS
+        # GLOBAL_IK_SUCCESS = False # 默认都是不成功的 
+
         # 提取左臂和右臂的关节角度
         if len(msg.position) >= 14:
             left_arm_positions = list(msg.position[:7])
@@ -184,7 +200,7 @@ class GraspToIK:
 
         # 如果 hand_pose 没有接收到，或者 hand_pose.position 数组为空，就将手指的关节弧度置为 0
         if self.hand_pose is None or len(self.hand_pose.position) < 10:
-            rospy.logwarn("Hand pose not received yet or hand pose position array is incomplete. Visualizing only arm positions.")
+            # rospy.logwarn("Hand pose not received yet or hand pose position array is incomplete. Visualizing only arm positions.")
             left_finger_positions = [0.0] * 10  # 假设手指关节数量为 10
         else:
             # 提取左手手指的关节弧度
@@ -200,7 +216,7 @@ class GraspToIK:
         global GLOBAL_IK_SUCCESS, last_seq
         if GLOBAL_IK_SUCCESS:
             # ik成功，告知灵巧手控制节点实物控制灵巧手
-            rospy.loginfo("Calling hand control service with new finger positions.")
+            # rospy.loginfo("Calling hand control service with new finger positions.")
             left_finger_positions = list(self.hand_pose.position[:10])
             self.send_hand_control_service(left_finger_positions)
 
@@ -220,6 +236,7 @@ class GraspToIK:
         ik_status_msg = Int32()
         ik_status_msg.data = ik_flag
         self.ik_status_pub.publish(ik_status_msg)
+        rospy.loginfo(f"Published IK success flag: {GLOBAL_IK_SUCCESS}")
 
     def grasp_callback(self, msg):
         global GLOBAL_IK_SUCCESS, last_seq
@@ -257,7 +274,7 @@ class GraspToIK:
         ik_msg.right_pose.joint_angles = [0.0] * 7
 
         # 发布 IK 命令
-        rospy.loginfo("基于最佳抓取姿态发布 IK 命令")
+        # rospy.loginfo("基于最佳抓取姿态发布 IK 命令")
         self.ik_pub.publish(ik_msg)
 
         # 创建并发布 Marker
@@ -285,7 +302,7 @@ class GraspToIK:
         marker.color.g = 1.0
         marker.color.b = 0.5
 
-        rospy.loginfo("发布 IK 前的 Marker")
+        # rospy.loginfo("发布 IK 前的 Marker")
         self.marker_pub.publish(marker)
 
 if __name__ == '__main__':
@@ -293,9 +310,9 @@ if __name__ == '__main__':
     node = GraspToIK()
 
     # 定时器用于检查并调用灵巧手抓取服务
-    rospy.Timer(rospy.Duration(0.1), node.check_and_call_service)
+    rospy.Timer(rospy.Duration(0.01), node.check_and_call_service)
     
     # TODO:增加一个定时器用于逆解成功后 | 服务调用：通知gendexgrasp可以停止生成姿态了
-    rospy.Timer(rospy.Duration(0.1), node.pub_ik_success_service)
+    rospy.Timer(rospy.Duration(0.01), node.pub_ik_success_service)
 
     rospy.spin()
