@@ -82,7 +82,7 @@ class GraspToIK:
         self.head_motor_data = robotHeadMotionData()
         self.head_motor_data.joint_data.append(0.0) # yaw轴
         self.head_motor_data.joint_data.append(0.0) # pitch轴
-        self.head_motor_sub = rospy.Subscriber('/robot_head_motor_position', robotHeadMotionData, self.head_motor_callback)
+        self.head_motor_sub = rospy.Subscriber('/robot_head_motor_position', robotHeadMotionData, self.head_motor_callback) # 底层sdk读出来
     
     def head_motor_callback(self, msg):
         """
@@ -99,7 +99,7 @@ class GraspToIK:
         else:
             rospy.logwarn("头部数据不完整，joint_data 需要至少两个元素。")
 
-        rospy.loginfo(f"head_motor_data: {self.head_motor_data}")
+        # rospy.loginfo(f"head_motor_data: {self.head_motor_data}")
 
     def handle_ik_global_ik_success_request(self, request):
         global GLOBAL_IK_SUCCESS
