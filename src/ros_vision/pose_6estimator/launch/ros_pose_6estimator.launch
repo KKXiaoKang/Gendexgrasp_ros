@@ -1,0 +1,4 @@
+<launch>
+    <!-- 启动 Contact模块 和 Grasp模块 服务器 -->
+    <node pkg="pose_6estimator" type="launch.py" name="ros_pose_6estimator_node" output="screen" />
+</launch>

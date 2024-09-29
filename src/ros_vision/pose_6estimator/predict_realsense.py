@@ -122,7 +122,7 @@ class PoseEstimatorNode:
             quaternion = rotation.as_quat()  # 以(x, y, z, w)格式返回四元数
             #rospy.loginfo(f"物体的欧拉角 (XYZ顺序): \n{euler_angles}")
             #rospy.loginfo(f"提取的旋转矩阵: \n{rotation_matrix}")
-            rospy.loginfo(f"物体的四元数: {quaternion}")
+            #rospy.loginfo(f"物体的四元数: {quaternion}")
             """
                 绘制 fps | 绘制欧拉角信息
             """
