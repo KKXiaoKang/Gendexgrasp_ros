@@ -326,9 +326,12 @@ class GraspToIK:
             self.object_real_msg_info.pose.orientation.w
         ])
         grasp_position_offset = np.array([
-            msg.pose.position.x,
-            msg.pose.position.y,
-            msg.pose.position.z
+            # msg.pose.position.x,
+            # msg.pose.position.y,
+            # msg.pose.position.z 
+            msg.pose.position.x + 0.03,
+            msg.pose.position.y + 0.03,
+            msg.pose.position.z + 0.03 
         ])        
         """
             设计左手最终抓取位置

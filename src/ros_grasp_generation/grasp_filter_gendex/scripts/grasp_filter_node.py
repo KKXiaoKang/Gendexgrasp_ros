@@ -10,6 +10,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Int32
 from tf.transformations import quaternion_from_matrix, euler_from_quaternion
 from grasp_filter_gendex.srv import offlineGraspButton, offlineGraspButtonResponse, offlineGraspButtonRequest
+import random
 
 # 加载配置文件
 rospack = rospkg.RosPack()
@@ -47,6 +48,10 @@ class GraspFilterNode:
 
         # 姿态筛选器开关
         self.POSE_FILTER_FLAG = True  # 默认关闭姿态筛选
+        
+        # # 随机开始遍历索引
+        # self.start_index = random.randint(0, len(self.grasp_data) - 1)
+        # self.current_index = self.start_index  # 当前索引
 
     def IK_status_callback(self, msg):
         """
@@ -131,7 +136,7 @@ class GraspFilterNode:
         roll, pitch, yaw = euler_angles
 
         # 检查roll是否在指定范围内（-20度到90度）
-        if not (-20 * np.pi / 180 <= roll <= 90 * np.pi / 180):  # 将度数转换为弧度
+        if not (-35 * np.pi / 180 <= roll <= 75 * np.pi / 180):  # 将度数转换为弧度
             return False
 
         return True
@@ -160,6 +165,8 @@ class GraspFilterNode:
         # 符合规则，发布数据
         self.pose_pub.publish(pose_msg)
         self.joint_pub.publish(joint_msg)
+        # 打印符合规则的key
+        rospy.loginfo(f"Published key: {key}")
 
     def spin(self):
         while not rospy.is_shutdown():

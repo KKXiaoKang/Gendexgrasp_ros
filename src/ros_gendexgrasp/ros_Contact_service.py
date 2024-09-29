@@ -134,8 +134,9 @@ class GendexContact:
                 # 将点云数据转换为 PyTorch Tensor
                 object_point_cloud = torch.Tensor(object_point_cloud).float()
 
-                # specified_faces_indices = np.arange(0, 2049)      # 全采样
-                specified_faces_indices = np.arange(1500, 2001)
+                specified_faces_indices = np.arange(0, 2049)       # 全采样
+                # specified_faces_indices = np.arange(1500, 2001)  # 适合于水瓶的抓取姿态 | 只取上面部分点云 
+                # specified_faces_indices = np.arange(500, 1001)
 
                 # 使用布尔掩码筛选 faces_indices 中属于特定面片的点
                 mask = np.isin(faces_indices, specified_faces_indices)

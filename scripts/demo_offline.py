@@ -22,6 +22,7 @@ from grasp_filter_gendex.srv import offlineGraspButton, offlineGraspButtonRespon
 
 from arm_specific_actions import robot_arm_action # 预设计轨迹
 from dynamic_biped.srv import changeArmCtrlMode
+from dynamic_biped.msg import robotHeadMotionData
 import time
 
 arm_mode = False
@@ -48,6 +49,8 @@ csv_data = {
         "hand_pose4 3 -10   0 0 -70 -90   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",
     ]
 }
+# 张开虎口
+hand_traj_data = [0, 100, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0]
 
 # grasp工厂 | 生成抓取状态服务
 gendexgrasp_factory_status_client = rospy.ServiceProxy(
@@ -82,6 +85,9 @@ ik_global_ik_success_request_client = rospy.ServiceProxy(
 offline_grasp_button_client = rospy.ServiceProxy(
     "/offline_grasp_service", offlineGraspButton
 )
+
+# 头部控制话题开关
+robot_head_pub = rospy.Publisher("/robot_head_motion_data", robotHeadMotionData, queue_size=10)
 
 def IK_status_callback(data):
     global IK_SUCCESS_FLAG
@@ -304,6 +310,7 @@ def handle_gendexgrasp_get_index():
 def gendexgrasp():
     global robot_instance
     global arm_mode
+    global hand_traj_data
     """
         （1） 设置手臂初始位置 | 调用/kuavo_arm_target_poses
         （2） 调用/gendex_grasp_service 开始生成姿态
@@ -312,6 +319,7 @@ def gendexgrasp():
     """
     arm_mode = True
     call_change_arm_ctrl_mode_service(arm_mode) # 开启手臂规划模式
+    robot_instance.srv_controlEndHand(hand_traj_data) # 打开虎口
 
     # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
     robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
@@ -389,6 +397,8 @@ class Menu:
                 "生成Gendexgrasp接触图", 
                 "单独调用姿态生成 | 开始",
                 "单独调用姿态生成 | 停止",
+                "控制头部head | yaw | Pitch",
+                "打开虎口 | 灵巧手",
                 Separator(),
                 "退出",
             ],
@@ -396,6 +406,8 @@ class Menu:
 
     def hand_option(self, option):
         global exit_menu, arm_mode
+        global robot_instance
+        global hand_traj_data
         if option == "开启手臂规划":
             arm_mode = True
             call_change_arm_ctrl_mode_service(arm_mode)
@@ -414,6 +426,16 @@ class Menu:
             handle_gendexgrasp_factory_status(status=1, seed_num=42)
         elif option == "单独调用姿态生成 | 停止":
             handle_gendexgrasp_factory_status(status=0)
+        elif option == "控制头部head | yaw | Pitch":
+            # TODO: call head_control service
+            msg = robotHeadMotionData()
+            msg.joint_data = [25, -20]
+            print("msg.joint_data: ", msg.joint_data)
+            robot_head_pub.publish(msg)
+            time.sleep(0.1)
+        elif option == "打开虎口 | 灵巧手":
+            # TODO: call head_control service
+            robot_instance.srv_controlEndHand(hand_traj_data) 
         elif option == "退出" or option is None:
             exit_menu = True
             print_dividing_line()
