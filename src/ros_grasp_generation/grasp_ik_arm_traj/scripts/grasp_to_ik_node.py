@@ -13,14 +13,16 @@ from motion_capture_ik.msg import twoArmHandPose, armHandPose
 from visualization_msgs.msg import Marker
 import numpy as np
 import math
-from dynamic_biped.msg import robotHandPosition
+from dynamic_biped.msg import robotHandPosition, robotHeadMotionData
 from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
 from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceRequest, ikMonitorServiceResponse
+import tf.transformations as tft
 
 GLOBAL_IK_SUCCESS = False
 last_seq = None
 
 IF_OPEN_MONITOR = False # True开始监听是否ik成功，False则关闭监听ik状态发布
+IF_USE_ROBOT_HEAD = True # 是否开启头部
 
 class GraspToIK:
     def __init__(self):
@@ -75,7 +77,30 @@ class GraspToIK:
 
         # 50Hz频率发布JointState
         rospy.Timer(rospy.Duration(0.02), self.publish_joint_states)
+
+        # 头部电机数据实时获取
+        self.head_motor_data = robotHeadMotionData()
+        self.head_motor_data.joint_data.append(0.0) # yaw轴
+        self.head_motor_data.joint_data.append(0.0) # pitch轴
+        self.head_motor_sub = rospy.Subscriber('/robot_head_motor_position', robotHeadMotionData, self.head_motor_callback)
     
+    def head_motor_callback(self, msg):
+        """
+            默认传入的为角度，需要转换为弧度
+        """
+        # 头部赋值数据
+        self.head_motor_data = msg
+        
+        # 检查 joint_data 是否有足够的数据
+        if len(self.head_motor_data.joint_data) >= 2:
+            # 更新 joint 状态，转换为弧度
+            self.joint_state_msg.position[-2] = math.radians(self.head_motor_data.joint_data[0])  # yaw
+            self.joint_state_msg.position[-1] = math.radians(self.head_motor_data.joint_data[1])  # pitch
+        else:
+            rospy.logwarn("头部数据不完整，joint_data 需要至少两个元素。")
+
+        rospy.loginfo(f"head_motor_data: {self.head_motor_data}")
+
     def handle_ik_global_ik_success_request(self, request):
         global GLOBAL_IK_SUCCESS
         # 根据请求数据设置全局变量
@@ -200,9 +225,6 @@ class GraspToIK:
             param msg: 机器人轨迹/kuavo_arm_traj
             主要用于可视化
         """
-        # global GLOBAL_IK_SUCCESS
-        # GLOBAL_IK_SUCCESS = False # 默认都是不成功的 
-
         # 提取左臂和右臂的关节角度
         if len(msg.position) >= 14:
             left_arm_positions = list(msg.position[:7])
@@ -225,9 +247,20 @@ class GraspToIK:
 
         # 更新 joint_state_msg 的位置
         positions = left_arm_positions + left_finger_positions + right_arm_positions
+
+        # 填充剩余关节
         remaining_joints = len(self.joint_state_msg.name) - len(positions)
         positions.extend([0.0] * remaining_joints)
+
+        # 添加头部的yaw和pitch数据
+        positions[-2] = self.head_motor_data.joint_data[0]  # yaw
+        positions[-1] = self.head_motor_data.joint_data[1]  # pitch
+
+        # rospy.loginfo(f"head_motor_data: {self.head_motor_data}")
+        # rospy.loginfo(f"positions: {positions}")
+        
         self.joint_state_msg.position = positions
+
 
     def check_and_call_service(self, event):
         global GLOBAL_IK_SUCCESS, last_seq
@@ -276,9 +309,25 @@ class GraspToIK:
         final_grasp_pose_x = self.object_real_msg_info.pose.position.x + msg.pose.position.x
         final_grasp_pose_y = self.object_real_msg_info.pose.position.y + msg.pose.position.y
         final_grasp_pose_z = self.object_real_msg_info.pose.position.z + msg.pose.position.z
+        # final_grasp_pose_x = self.object_real_msg_info.pose.position.x
+        # final_grasp_pose_y = self.object_real_msg_info.pose.position.y
+        # final_grasp_pose_z = self.object_real_msg_info.pose.position.z
 
         ik_msg.left_pose.pos_xyz = [final_grasp_pose_x, final_grasp_pose_y, final_grasp_pose_z]
-        ik_msg.left_pose.quat_xyzw = quat.tolist()
+
+        # 获取物体的实际姿态四元数
+        object_orientation = np.array([
+            self.object_real_msg_info.pose.orientation.x,
+            self.object_real_msg_info.pose.orientation.y,
+            self.object_real_msg_info.pose.orientation.z,
+            self.object_real_msg_info.pose.orientation.w
+        ])
+
+        # 合并抓取姿态和物体姿态
+        ## object_orientation为基底。quat为旋转
+        combined_quat = tft.quaternion_multiply(object_orientation, quat)
+
+        ik_msg.left_pose.quat_xyzw = combined_quat.tolist()
 
         # 简单起见，将肘部位置和关节角度设置为零
         ik_msg.left_pose.elbow_pos_xyz = [0.0, 0.0, 0.0]
@@ -321,6 +370,7 @@ class GraspToIK:
 
         # rospy.loginfo("发布 IK 前的 Marker")
         self.marker_pub.publish(marker)
+
 
 if __name__ == '__main__':
     rospy.init_node('grasp_to_ik_node', anonymous=True)
