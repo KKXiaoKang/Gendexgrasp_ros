@@ -8,8 +8,7 @@ import numpy as np
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int32
-from tf.transformations import quaternion_from_matrix
-
+from tf.transformations import quaternion_from_matrix, euler_from_quaternion
 from grasp_filter_gendex.srv import offlineGraspButton, offlineGraspButtonResponse, offlineGraspButtonRequest
 
 # 加载配置文件
@@ -46,6 +45,9 @@ class GraspFilterNode:
         # 创建服务
         self.grasp_service = rospy.Service('/offline_grasp_service', offlineGraspButton, self.handle_grasp_service)
 
+        # 姿态筛选器开关
+        self.POSE_FILTER_FLAG = True  # 默认关闭姿态筛选
+
     def IK_status_callback(self, msg):
         """
         监听 IK 求解状态，只有在 START_STOP_PUB_FLAG 为 True 时判断 IK 是否成功。
@@ -57,7 +59,8 @@ class GraspFilterNode:
                 self.START_STOP_PUB_FLAG = False  # 停止发布抓取数据
                 self.IK_SUCCESS_FLAG = True  # 表示 IK 求解成功
             else:
-                rospy.loginfo("IK solver failed.")
+                # rospy.loginfo("IK solver failed.")
+                pass
 
     def handle_grasp_service(self, req):
         """
@@ -110,6 +113,29 @@ class GraspFilterNode:
         robot_hand_joint_msg.position = joint_positions
         return robot_hand_joint_msg
 
+    def get_euler_angles(self, pose):
+        # 从PoseStamped提取四元数
+        quaternion = (
+            pose.pose.orientation.x,
+            pose.pose.orientation.y,
+            pose.pose.orientation.z,
+            pose.pose.orientation.w
+        )
+
+        # 转换为欧拉角
+        euler_angles = euler_from_quaternion(quaternion)
+        return euler_angles  # 返回 (roll, pitch, yaw)
+    
+    def is_pose_valid(self, pose):
+        euler_angles = self.get_euler_angles(pose)
+        roll, pitch, yaw = euler_angles
+
+        # 检查roll是否在指定范围内（-20度到90度）
+        if not (-20 * np.pi / 180 <= roll <= 90 * np.pi / 180):  # 将度数转换为弧度
+            return False
+
+        return True
+    
     def publish_grasp_data(self):
         if not self.START_STOP_PUB_FLAG:
             return  # 当标志位为 False 时，不发布数据
@@ -120,11 +146,18 @@ class GraspFilterNode:
             self.grasp_keys = iter(self.grasp_data)
             key = next(self.grasp_keys)
         
+        # 赋值设置best_q
         best_q_list = self.grasp_data[key]
         best_q = best_q_list[0]
         pose_msg = self.best_q_to_posestamped(best_q)
         joint_msg = self.best_q_to_posehand(best_q)
 
+        # 检查姿态筛选开关
+        if self.POSE_FILTER_FLAG:
+            if not self.is_pose_valid(pose_msg):
+                # rospy.logwarn("Pose does not meet the filter criteria, skipping.")
+                return  # 如果姿态不符合规则，直接返回
+        # 符合规则，发布数据
         self.pose_pub.publish(pose_msg)
         self.joint_pub.publish(joint_msg)
 
