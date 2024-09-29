@@ -1628,7 +1628,7 @@
         <origin xyz="-0.0175475823124929 0 0.499400000000373" rpy="0 0 0" />
         <parent link="torso" />
         <child link="head_yaw" />
-        <axis xyz="0 0 -1" />
+        <axis xyz="0 0 1" />
     </joint>
     <link name="head_pitch">
         <inertial>
@@ -1656,7 +1656,7 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <parent link="head_yaw" />
         <child link="head_pitch" />
-        <axis xyz="0 1 0" />
+        <axis xyz="0 -1 0" />
     </joint>
     <link name="head_camera">
         <visual>
