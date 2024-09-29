@@ -24,6 +24,15 @@ last_seq = None
 IF_OPEN_MONITOR = False # True开始监听是否ik成功，False则关闭监听ik状态发布
 IF_USE_ROBOT_HEAD = True # 是否开启头部
 
+def quaternion_to_rotation_matrix(q):
+    """Convert a quaternion into a rotation matrix."""
+    x, y, z, w = q
+    return np.array([
+        [1 - 2 * (y**2 + z**2), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+        [2 * (x * y + z * w), 1 - 2 * (x**2 + z**2), 2 * (y * z - x * w)],
+        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x**2 + y**2)]
+    ])
+
 class GraspToIK:
     def __init__(self):
         # 订阅最佳抓取姿态
@@ -253,8 +262,8 @@ class GraspToIK:
         positions.extend([0.0] * remaining_joints)
 
         # 添加头部的yaw和pitch数据
-        positions[-2] = self.head_motor_data.joint_data[0]  # yaw
-        positions[-1] = self.head_motor_data.joint_data[1]  # pitch
+        positions[-2] = math.radians(self.head_motor_data.joint_data[0])  # yaw
+        positions[-1] = math.radians(self.head_motor_data.joint_data[1])  # pitch
 
         # rospy.loginfo(f"head_motor_data: {self.head_motor_data}")
         # rospy.loginfo(f"positions: {positions}")
@@ -305,30 +314,43 @@ class GraspToIK:
         # 初始化 IK 命令消息
         ik_msg = twoArmHandPose()
 
-        # 假设姿态是针对右手的
-        final_grasp_pose_x = self.object_real_msg_info.pose.position.x + msg.pose.position.x
-        final_grasp_pose_y = self.object_real_msg_info.pose.position.y + msg.pose.position.y
-        final_grasp_pose_z = self.object_real_msg_info.pose.position.z + msg.pose.position.z
-        # final_grasp_pose_x = self.object_real_msg_info.pose.position.x
-        # final_grasp_pose_y = self.object_real_msg_info.pose.position.y
-        # final_grasp_pose_z = self.object_real_msg_info.pose.position.z
-
-        ik_msg.left_pose.pos_xyz = [final_grasp_pose_x, final_grasp_pose_y, final_grasp_pose_z]
-
-        # 获取物体的实际姿态四元数
+        object_position = np.array([
+            self.object_real_msg_info.pose.position.x,
+            self.object_real_msg_info.pose.position.y,
+            self.object_real_msg_info.pose.position.z
+        ])
         object_orientation = np.array([
             self.object_real_msg_info.pose.orientation.x,
             self.object_real_msg_info.pose.orientation.y,
             self.object_real_msg_info.pose.orientation.z,
             self.object_real_msg_info.pose.orientation.w
         ])
-
+        grasp_position_offset = np.array([
+            msg.pose.position.x,
+            msg.pose.position.y,
+            msg.pose.position.z
+        ])        
+        """
+            设计左手最终抓取位置
+        """
+        # 假设姿态是针对右手的
+        # final_grasp_pose_x = self.object_real_msg_info.pose.position.x + msg.pose.position.x
+        # final_grasp_pose_y = self.object_real_msg_info.pose.position.y + msg.pose.position.y
+        # final_grasp_pose_z = self.object_real_msg_info.pose.position.z + msg.pose.position.z
+        rotation_matrix = quaternion_to_rotation_matrix(object_orientation)
+        rotated_grasp_offset = np.dot(rotation_matrix, grasp_position_offset)
+        final_grasp_position = object_position + rotated_grasp_offset
+        ik_msg.left_pose.pos_xyz = final_grasp_position.tolist()
+        """
+            设计左手最终抓取姿态
+        """
         # 合并抓取姿态和物体姿态
         ## object_orientation为基底。quat为旋转
         combined_quat = tft.quaternion_multiply(object_orientation, quat)
-
         ik_msg.left_pose.quat_xyzw = combined_quat.tolist()
-
+        """
+            左手的其他设置
+        """
         # 简单起见，将肘部位置和关节角度设置为零
         ik_msg.left_pose.elbow_pos_xyz = [0.0, 0.0, 0.0]
         ik_msg.left_pose.joint_angles = [0.0] * 7
