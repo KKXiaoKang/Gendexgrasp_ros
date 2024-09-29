@@ -9,6 +9,7 @@ from std_msgs.msg import Header
 import math
 from geometry_msgs.msg import PoseStamped
 import geometry_msgs
+import numpy as np
 
 # 是否使用Gen6D输出姿态信息
 USE_GEN_6DOF_FLAG = False
@@ -102,10 +103,33 @@ class YoloTransform:
                     transformed_detection.results[0].pose.pose.orientation.z = gen6d_pose.pose.orientation.z  
                     transformed_detection.results[0].pose.pose.orientation.w = gen6d_pose.pose.orientation.w  
             else:
+                # 标准姿态
                 transformed_detection.results[0].pose.pose.orientation.x = 0.0
                 transformed_detection.results[0].pose.pose.orientation.y = 0.0
                 transformed_detection.results[0].pose.pose.orientation.z = 0.0
                 transformed_detection.results[0].pose.pose.orientation.w = 1.0 
+                """
+                    修改姿态
+                """
+                # 当前姿态的四元数
+                current_orientation = [
+                    transformed_detection.results[0].pose.pose.orientation.x,
+                    transformed_detection.results[0].pose.pose.orientation.y,
+                    transformed_detection.results[0].pose.pose.orientation.z,
+                    transformed_detection.results[0].pose.pose.orientation.w,
+                ]
+                # 计算绕yaw轴旋转110度的四元数
+                yaw_angle = -70 * np.pi / 180  # 将度数转换为弧度
+                rotation_quaternion = quaternion_from_euler(0, 0, yaw_angle)
+
+                # 计算新的四元数
+                new_orientation = quaternion_multiply(current_orientation, rotation_quaternion)
+
+                # 更新姿态
+                transformed_detection.results[0].pose.pose.orientation.x = new_orientation[0]
+                transformed_detection.results[0].pose.pose.orientation.y = new_orientation[1]
+                transformed_detection.results[0].pose.pose.orientation.z = new_orientation[2]
+                transformed_detection.results[0].pose.pose.orientation.w = new_orientation[3]
 
             # 创建TransformStamped消息用于TF广播
             transform_stamped = TransformStamped()
