@@ -58,6 +58,9 @@ class GendexContact:
 
         os.makedirs(self.logs_basedir, exist_ok=True)
         os.makedirs(self.vis_cmap_dir, exist_ok=True)
+        
+        # 打开特定面片选取开关 
+        self.open_spec_flag = True
 
         if args.s_model == 'PointNetCVAE_SqrtFullRobots':
             self.model = self._load_pointnet_model()
@@ -118,7 +121,7 @@ class GendexContact:
     def gen_contact_map(self, contact_num):
         pre_process_contact_map_goal = self.pre_process_map[self.args.pre_process]
         object_list = json.load(open(os.path.join('ckpts/SqrtFullRobots', "objects.json"), 'rb'))['test']
-
+        np.set_printoptions(threshold=np.inf) # 设置打印时输出完整数组，不省略
         for object_name in object_list:
             object_mesh = tm.load(os.path.join('data/object', object_name.split('+')[0], object_name.split("+")[1],
                                                f'{object_name.split("+")[1]}.stl'))
@@ -127,25 +130,30 @@ class GendexContact:
             while not rospy.is_shutdown() and count_contact_map < contact_num:
                 cmap_ood_sample = {'object_name': object_name, 'i_sample': count_contact_map, 'object_point_cloud': None, 'contact_map_value': None}
 
-                # # 随机采样整个网格的面片索引2048个
+                # 随机采样整个网格的面片索引2048个
                 object_point_cloud, faces_indices = trimesh.sample.sample_surface(mesh=object_mesh, count=2048)
-                # 计算这些采样点对应的法向量
-                contact_points_normal = torch.tensor([object_mesh.face_normals[x] for x in faces_indices]).float()
+                # 进行排序
+                sorted_faces_indices = np.sort(faces_indices)
+                # print( " ------------- sorted_faces_indices --------------- : ", sorted_faces_indices)
+                # 计算排序之后的点的法向量
+                contact_points_normal = torch.tensor([object_mesh.face_normals[x] for x in sorted_faces_indices]).float()
                 # 将点云数据转换为 PyTorch Tensor
                 object_point_cloud = torch.Tensor(object_point_cloud).float()
 
-                specified_faces_indices = np.arange(0, 2049)       # 全采样
-                # specified_faces_indices = np.arange(1500, 2001)  # 适合于水瓶的抓取姿态 | 只取上面部分点云 
-                # specified_faces_indices = np.arange(500, 1001)
-
-                # 使用布尔掩码筛选 faces_indices 中属于特定面片的点
-                mask = np.isin(faces_indices, specified_faces_indices)
-
-                # 重新组成新的局部点云和法向量
-                filtered_object_point_cloud = object_point_cloud[mask]
-                filtered_contact_points_normal = contact_points_normal[mask]
-                # 拼接数据并且传递到设备
-                object_point_cloud = torch.cat([filtered_object_point_cloud, filtered_contact_points_normal], dim=1).to(self.device)
+                # 判断是否开启特定样片采样
+                if self.open_spec_flag: # TODO:检索算法准确性
+                    print(" --------------- faces_indices -------------------------- : ", len(faces_indices))
+                    # specified_faces_indices = sorted_faces_indices[0:2049] # 全采样
+                    specified_faces_indices = sorted_faces_indices[1200:2049] # 部分采样
+                    # print(" --------------- specified_faces_indices -------------------------- : ", specified_faces_indices)
+                    mask = np.isin(faces_indices, specified_faces_indices)
+                    # print(" --------------- mask -------------------------- : ", mask)
+                    filtered_object_point_cloud = object_point_cloud[mask]
+                    filtered_contact_points_normal = contact_points_normal[mask]
+                    object_point_cloud = torch.cat([filtered_object_point_cloud, filtered_contact_points_normal], dim=1).to(self.device)                   
+                else: # 不开启特定样片采样，进行全采样
+                    object_point_cloud = torch.cat([object_point_cloud, contact_points_normal], dim=1).to(self.device)
+                
                 # 生成潜在代码 | 使用标准正态分布随机生成一个潜在代码z_latent_code，它将被输入到解码器中用于生成接触图
                 z_latent_code = torch.randn(1, self.model.latent_size, device=self.device).float()
                 #  调用PointNetCVAE模型的inference方法，将采样的点云坐标（去掉法向量部分）和潜在代码输入模型，输出接触图值contact_map_value
