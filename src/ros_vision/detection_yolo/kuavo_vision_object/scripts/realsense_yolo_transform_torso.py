@@ -119,7 +119,8 @@ class YoloTransform:
                     transformed_detection.results[0].pose.pose.orientation.w,
                 ]
                 # 计算绕yaw轴旋转110度的四元数
-                yaw_angle = -70 * np.pi / 180  # 将度数转换为弧度
+                # yaw_angle = -70 * np.pi / 180  # 将度数转换为弧度
+                yaw_angle = -140 * np.pi / 180  # 将度数转换为弧度
                 rotation_quaternion = quaternion_from_euler(0, 0, yaw_angle)
 
                 # 计算新的四元数
