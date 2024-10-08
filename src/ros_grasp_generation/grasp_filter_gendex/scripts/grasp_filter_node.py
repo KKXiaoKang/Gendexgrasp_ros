@@ -131,14 +131,20 @@ class GraspFilterNode:
         euler_angles = euler_from_quaternion(quaternion)
         return euler_angles  # 返回 (roll, pitch, yaw)
     
-    def is_pose_valid(self, pose):
+    def is_pose_valid(self, pose, key):
         euler_angles = self.get_euler_angles(pose)
         roll, pitch, yaw = euler_angles
 
         # 检查roll是否在指定范围内（-20度到90度）
-        if not (-35 * np.pi / 180 <= roll <= 75 * np.pi / 180):  # 将度数转换为弧度
+        if not (-25 * np.pi / 180 <= roll <= 75 * np.pi / 180):  # 将度数转换为弧度
             return False
 
+        # 检查yaw是否符合范围
+        if not (-110 * np.pi / 180 <= roll <= 110 * np.pi / 180):  # 将度数转换为弧度
+            return False
+        
+        # 检索角度
+        rospy.loginfo(f"Pose {key} is {euler_angles}.")
         return True
     
     def publish_grasp_data(self):
@@ -159,7 +165,7 @@ class GraspFilterNode:
 
         # 检查姿态筛选开关
         if self.POSE_FILTER_FLAG:
-            if not self.is_pose_valid(pose_msg):
+            if not self.is_pose_valid(pose_msg, key):
                 # rospy.logwarn("Pose does not meet the filter criteria, skipping.")
                 return  # 如果姿态不符合规则，直接返回
         # 符合规则，发布数据

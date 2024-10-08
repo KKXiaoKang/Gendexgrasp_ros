@@ -28,13 +28,17 @@ class HandSDKControlServer:
             left_hand_position, right_hand_position
         ))
 
+        # TODO:DEBUG
+        left_hand_position = [100, 100, 100, 100, 100, 100]
+        rospy.loginfo("Modified Left Hand Position: {}".format(left_hand_position))
+
         # 等待5s - 让机械臂运动到位
         time.sleep(5)
 
         # 发布到 /control_robot_hand_position 话题
         hand_position_msg = robotHandPosition()
         hand_position_msg.header = req.header
-        hand_position_msg.left_hand_position = req.left_hand_position
+        hand_position_msg.left_hand_position = left_hand_position  # 使用修改后的值
         hand_position_msg.right_hand_position = req.right_hand_position
         
         self.control_robot_hand_position_pub.publish(hand_position_msg)

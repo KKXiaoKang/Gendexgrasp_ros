@@ -329,9 +329,9 @@ class GraspToIK:
             # msg.pose.position.x,
             # msg.pose.position.y,
             # msg.pose.position.z 
-            msg.pose.position.x + 0.03,
-            msg.pose.position.y + 0.03,
-            msg.pose.position.z + 0.03 
+            msg.pose.position.x + 0.018,
+            msg.pose.position.y + 0.018,
+            msg.pose.position.z + 0.018
         ])        
         """
             设计左手最终抓取位置
