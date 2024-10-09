@@ -12,8 +12,8 @@ import geometry_msgs
 import numpy as np
 
 # 是否使用Gen6D输出姿态信息
-USE_GEN_6DOF_FLAG = False
-WHO_USE_DOF_INFO_FLAG = True
+USE_GEN_6DOF_FLAG = True
+WHO_USE_DOF_INFO_FLAG = True # # 判断谁主要使用Gen6D信息(True为相机坐标系用姿态信息，False为机器人基坐标系用姿态信息)
 gen6d_pose = PoseStamped()
 gen6d_pose.pose.orientation.x = 0.0 
 gen6d_pose.pose.orientation.y = 0.0 
@@ -94,6 +94,8 @@ class YoloTransform:
             # 使用TF变换坐标 -- 设置抓取位姿初始化，位置发送变换，姿态保持不变
             transformed_pose = tf2_geometry_msgs.do_transform_pose(pose_stamped, transform)
             transformed_detection.results[0].pose.pose = transformed_pose.pose  
+
+            # 判断是否要融入Gen6D姿态信息
             if USE_GEN_6DOF_FLAG:
                 if WHO_USE_DOF_INFO_FLAG: # 判断谁主要使用Gen6D信息(True为相机坐标系用姿态信息，False为机器人基坐标系用姿态信息)
                     pass

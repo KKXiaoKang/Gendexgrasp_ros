@@ -23,6 +23,7 @@ import cv2
 from scipy.spatial.transform import Rotation as R # 提取旋转矩阵
 
 USE_VIRTUAL_K = True  # 是否使用伪K进行姿态估计
+USE_PLY2STL_TF = False  # 是否将ply坐标齐次变换到STL之后再发布姿态
 
 class PoseEstimatorNode:
     def __init__(self, args):
@@ -123,32 +124,36 @@ class PoseEstimatorNode:
             #rospy.loginfo(f"物体的欧拉角 (XYZ顺序): \n{euler_angles}")
             #rospy.loginfo(f"提取的旋转矩阵: \n{rotation_matrix}")
             #rospy.loginfo(f"物体的四元数: {quaternion}")
-            """
-                绘制 fps | 绘制欧拉角信息
-            """
-            # 在图像上绘制fps
-            cv2.putText(bbox_img_, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            # 添加欧拉角信息到图像
-            euler_text = f"Pitch:{euler_angles[0]:.2f}, Yaw:{euler_angles[1]:.2f}, Roll:{euler_angles[2]:.2f}"
-            cv2.putText(bbox_img_, euler_text, (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+            if USE_PLY2STL_TF:
+                # TODO:将ply坐标转换到STL坐标
+                pass
+            else:
+                # TODO:发布ply坐标系下的物体姿态
+                """
+                    绘制 fps | 绘制欧拉角信息
+                """
+                # 在图像上绘制fps
+                cv2.putText(bbox_img_, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                # 添加欧拉角信息到图像
+                euler_text = f"Pitch:{euler_angles[0]:.2f}, Yaw:{euler_angles[1]:.2f}, Roll:{euler_angles[2]:.2f}"
+                cv2.putText(bbox_img_, euler_text, (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                """
+                    发布图像信息 | 发布姿态信息
+                """
+                bbox_img_msg = self.bridge.cv2_to_imgmsg(bbox_img_, encoding='bgr8')
+                self.bbox_pub.publish(bbox_img_msg)
 
-            """
-                发布图像信息 | 发布姿态信息
-            """
-            bbox_img_msg = self.bridge.cv2_to_imgmsg(bbox_img_, encoding='bgr8')
-            self.bbox_pub.publish(bbox_img_msg)
-
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = rospy.Time.now()
-            pose_msg.header.frame_id = "camera_color_optical_frame"  # 设置为相机的坐标系或其他合适的坐标系
-            pose_msg.pose.position.x = pose_pr[0, 3]  # 提取平移部分
-            pose_msg.pose.position.y = pose_pr[1, 3]
-            pose_msg.pose.position.z = pose_pr[2, 3]
-            pose_msg.pose.orientation.x = quaternion[0]
-            pose_msg.pose.orientation.y = quaternion[1]
-            pose_msg.pose.orientation.z = quaternion[2]
-            pose_msg.pose.orientation.w = quaternion[3]
-            self.pose_pub.publish(pose_msg)
+                pose_msg = PoseStamped()
+                pose_msg.header.stamp = rospy.Time.now()
+                pose_msg.header.frame_id = "camera_color_optical_frame"  # 设置为相机的坐标系或其他合适的坐标系
+                pose_msg.pose.position.x = pose_pr[0, 3]  # 提取平移部分
+                pose_msg.pose.position.y = pose_pr[1, 3]
+                pose_msg.pose.position.z = pose_pr[2, 3]
+                pose_msg.pose.orientation.x = quaternion[0]
+                pose_msg.pose.orientation.y = quaternion[1]
+                pose_msg.pose.orientation.z = quaternion[2]
+                pose_msg.pose.orientation.w = quaternion[3]
+                self.pose_pub.publish(pose_msg)
         else:
             # 进行姿态估计
             if self.pose_init is not None:
