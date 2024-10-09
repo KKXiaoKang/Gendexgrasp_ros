@@ -25,13 +25,19 @@ def manual_initial_alignment(source_point_cloud, target_point_cloud):
     trans_init = np.eye(4)
     
     # 对旋转进行调整，例如沿X轴旋转45度
-    trans_init[:3, :3] = o3d.geometry.get_rotation_matrix_from_xyz((np.pi / 4, 0, 0))  # 调整角度
+    # trans_init[:3, :3] = o3d.geometry.get_rotation_matrix_from_xyz((np.pi / 4, 0, 0))      # X轴旋转45度
+    # trans_init[:3, :3] = o3d.geometry.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi))  # X轴旋转45度，Z轴旋转180度
+    # trans_init[:3, :3] = o3d.geometry.get_rotation_matrix_from_xyz((np.pi / 3, 0, np.pi))  # X轴旋转60度，Z轴旋转180度
+    trans_init[:3, :3] = o3d.geometry.get_rotation_matrix_from_xyz((0, 0, np.pi))
+
     # 对平移进行调整，沿Z轴移动0.1单位
     trans_init[:3, 3] = [0.0, 0.0, 0.1]  # 调整平移
 
     # 应用初始变换到源点云
     source_point_cloud.transform(trans_init)
-    return source_point_cloud
+    print(" trans_init : ")
+    print(trans_init)
+    return source_point_cloud, trans_init
 
 # 使用ICP算法对齐点云和STL文件
 def align_point_clouds(source_point_cloud, target_point_cloud, voxel_size=0.005, max_correspondence_distance=0.1):
@@ -76,6 +82,10 @@ def smart_scale_point_clouds(source_point_cloud, target_point_cloud):
 
     # 对源点云进行缩放
     points = np.asarray(source_point_cloud.points)
+    
+    # debug 固定缩放因子 
+    # scale_factor = 0.5
+
     points *= scale_factor
     source_point_cloud.points = o3d.utility.Vector3dVector(points)
 
@@ -91,16 +101,27 @@ def main(ply_file_path, stl_file_path):
     point_cloud = smart_scale_point_clouds(point_cloud, stl_point_cloud)
 
     # 手动初始对齐
-    point_cloud = manual_initial_alignment(point_cloud, stl_point_cloud)
+    point_cloud, initial_transformation_matrix = manual_initial_alignment(point_cloud, stl_point_cloud)
 
-    # 对齐并获取变换矩阵
-    transformation_matrix = align_point_clouds(point_cloud, stl_point_cloud, max_correspondence_distance=0.1)
+    # 对齐并获取ICP变换矩阵
+    icp_transformation_matrix = align_point_clouds(point_cloud, stl_point_cloud, max_correspondence_distance=0.1)
 
-    print("Transformation Matrix:")
-    print(transformation_matrix)
+    print("ICP Transformation Matrix:")
+    print(icp_transformation_matrix)
 
-    # 应用ICP计算出的变换矩阵到源点云
-    point_cloud.transform(transformation_matrix)
+    # 计算最终齐次变换矩阵
+    final_transformation_matrix = icp_transformation_matrix @ initial_transformation_matrix  # 矩阵相乘
+    print("Final Transformation Matrix (PLY to STL):")
+    print(final_transformation_matrix)
+
+    # 提取所需要的旋转矩阵
+    rotation_matrix = final_transformation_matrix[:3, :3]
+    print("Rotation Matrix from final transformation:")
+    print(rotation_matrix)
+
+    # 应用最终变换矩阵到源点云
+    # point_cloud.transform(final_transformation_matrix) # 本身point_cloud已经是初步对齐后的点云，如果再用final_transformation_matrix则二次进行了转换，故会偏离
+    point_cloud.transform(icp_transformation_matrix) # 直接用icp_transformation_matrix，相当于icp_transformation_matrix @ initial_transformation_matrix（point_cloud转换过后）
 
     # 可视化对齐结果
     print("Visualizing the aligned point clouds...")
