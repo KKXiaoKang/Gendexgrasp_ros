@@ -1,6 +1,7 @@
 import open3d as o3d
 import numpy as np
 import trimesh
+import yaml
 
 # 加载点云（.ply）文件
 def load_point_cloud(ply_file_path):
@@ -87,8 +88,15 @@ def smart_scale_point_clouds(source_point_cloud, target_point_cloud):
 
     return source_point_cloud
 
+# 保存矩阵为YAML文件
+def save_matrix_to_yaml(matrix, filename):
+    print(f"Saving rotation matrix to {filename}")
+    with open(filename, 'w') as yaml_file:
+        yaml.dump(matrix.tolist(), yaml_file, default_flow_style=False)
+    print("Matrix saved successfully.")
+
 # 主函数：计算齐次变换矩阵并可视化
-def main(ply_file_path, stl_file_path):
+def main(ply_file_path, stl_file_path, yaml_file_path):
     # 加载点云和STL文件
     point_cloud = load_point_cloud(ply_file_path)
     stl_point_cloud = load_stl_as_point_cloud(stl_file_path)
@@ -115,6 +123,9 @@ def main(ply_file_path, stl_file_path):
     print("Rotation Matrix from final transformation:")
     print(rotation_matrix)
 
+    # 保存旋转矩阵为YAML文件
+    save_matrix_to_yaml(rotation_matrix, yaml_file_path)
+
     # 应用最终变换矩阵到源点云
     point_cloud.transform(icp_transformation_matrix)
 
@@ -126,6 +137,7 @@ if __name__ == "__main__":
     # 提供Ply文件路径和STL文件路径
     ply_file_path = "./object_point_cloud.ply"
     stl_file_path = "./mustard_bottle.stl"
+    yaml_file_path = "./rotation_matrix.yaml"  # 保存旋转矩阵的YAML文件路径
 
     # 运行主函数
-    main(ply_file_path, stl_file_path)
+    main(ply_file_path, stl_file_path, yaml_file_path)
