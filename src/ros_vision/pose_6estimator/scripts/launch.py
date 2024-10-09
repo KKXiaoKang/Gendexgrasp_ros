@@ -3,7 +3,7 @@ import os
 
 def activate_conda_and_run():
     # 切换到指定目录
-    target_dir = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_vision/pose_6estimator"
+    target_dir = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_vision/pose_6estimator"
     os.chdir(target_dir)
 
     # 运行两个 Python 文件

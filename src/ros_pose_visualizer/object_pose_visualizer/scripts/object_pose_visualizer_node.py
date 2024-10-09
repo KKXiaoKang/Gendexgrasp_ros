@@ -9,9 +9,9 @@ import os
 class ObjectPoseVisualizer:
     def __init__(self):
         self.marker_pub = rospy.Publisher("object_visualization_marker", Marker, queue_size=10)
-        # self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/contactdb/cup/cup.stl"
-        # self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/contactdb/water_bottle/water_bottle.stl"
-        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/contactdb/mustard_bottle/mustard_bottle.stl"
+        # self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_robot_model/contactdb/cup/cup.stl"
+        # self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_robot_model/contactdb/water_bottle/water_bottle.stl"
+        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_robot_model/contactdb/mustard_bottle/mustard_bottle.stl"
         rospy.Subscriber("/object_yolo_tf2_torso_result", Detection2DArray, self.callback)
 
     def callback(self, data):

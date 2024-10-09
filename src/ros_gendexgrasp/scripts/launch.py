@@ -7,7 +7,7 @@ def activate_conda_and_run():
     conda_activate = f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {conda_env}"
 
     # 切换到指定目录
-    target_dir = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_gendexgrasp"
+    target_dir = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_gendexgrasp"
     os.chdir(target_dir)
 
     # 运行两个 Python 文件

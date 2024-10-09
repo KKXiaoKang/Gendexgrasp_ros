@@ -73,7 +73,7 @@ class GraspToIK:
         self.marker_pub = rospy.Publisher('/ik_before_visualization_marker', Marker, queue_size=10)
 
         # 模型路径
-        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/biped_s4/meshes/l_hand_roll.STL"
+        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_robot_model/biped_s4/meshes/l_hand_roll.STL"
 
         # 增加真实的物体的姿态
         self.object_real_sub = rospy.Subscriber("object_visualization_marker", Marker, self.object_real_callback)

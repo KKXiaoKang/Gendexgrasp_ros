@@ -12,7 +12,7 @@ class GraspPoseVisualizer:
 
         # 订阅/best_grasp_pose话题 | 用于获取待抓取物体的姿态(包含手的中心位置)
         self.pose_sub = rospy.Subscriber("/best_grasp_pose", PoseStamped, self.pose_callback)
-        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros/src/ros_robot_model/biped_s4"
+        self.model_path = "/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/src/ros_robot_model/biped_s4"
 
         # 订阅/object_visualization_marker话题 | 用于获取待抓取物体的实际位置
         self.object_real_sub = rospy.Subscriber("object_visualization_marker", Marker, self.object_real_callback)
