@@ -43,3 +43,19 @@ python run_grasp_gen_ros.py --robot_name lejuhand --max_iter 100 --num_particles
 # 新：统一发布ros_gendexgrasp服务端
 roslaunch ros_gendexgrasp gendexgrasp_ros_service.launch
 ```
+
+## 最新启动
+```bash
+# 引入固定物体的抓取姿态 
+source /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/devel/setup.bash
+
+# 启动ik
+roslaunch motion_capture_ik visualize.launch visualize:=true robot_version:=4 control_hand_side:=0 send_srv:=0
+
+# 启动姿态框架
+roslaunch grasp_ik_arm_traj all_in_one.launch
+
+# 启动演示脚本
+cd /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/scripts
+python3 demo_offline.py
+```

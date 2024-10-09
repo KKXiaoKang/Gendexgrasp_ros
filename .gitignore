@@ -180,3 +180,15 @@ src/ros_gendexgrasp/logs_ros_gen/
 src/ros_gendexgrasp/logs_inf_cvae/
 src/ros_gendexgrasp/logs_ros_inf_cvae/
 src/ros_gendexgrasp/data/
+
+# 屏蔽pose_6estimator没必要的文件
+src/ros_vision/pose_6estimator/data/
+src/ros_vision/pose_6estimator/colmap/
+
+# 离线姿态屏蔽
+src/ros_grasp_generation/grasp_filter_gendex/scripts/config
+
+# 屏蔽
+ros_vision/6DOF_Gen_ros/
+ros_vision/Gen6D/
+.vscode/
