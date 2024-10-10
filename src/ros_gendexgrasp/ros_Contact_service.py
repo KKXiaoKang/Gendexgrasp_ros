@@ -143,8 +143,12 @@ class GendexContact:
                 # 判断是否开启特定样片采样
                 if self.open_spec_flag: # TODO:检索算法准确性
                     print(" --------------- faces_indices -------------------------- : ", len(faces_indices))
+                    specified_faces_indices = np.concatenate([
+                        sorted_faces_indices[0:1120],    # 第 100 到 200 个
+                        sorted_faces_indices[1700:2049]  # 第 1600 到 2049 个
+                    ])
                     # specified_faces_indices = sorted_faces_indices[0:2049] # 全采样
-                    specified_faces_indices = sorted_faces_indices[1600:2049] # 部分采样
+                    # specified_faces_indices = sorted_faces_indices[1600:2049] # 部分采样
                     # print(" --------------- specified_faces_indices -------------------------- : ", specified_faces_indices)
                     mask = np.isin(faces_indices, specified_faces_indices)
                     # print(" --------------- mask -------------------------- : ", mask)

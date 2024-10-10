@@ -51,6 +51,7 @@ csv_data = {
 }
 # 张开虎口
 hand_traj_data = [0, 100, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0]
+zero_traj_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 # grasp工厂 | 生成抓取状态服务
 gendexgrasp_factory_status_client = rospy.ServiceProxy(
@@ -319,12 +320,13 @@ def gendexgrasp():
     """
     arm_mode = True
     call_change_arm_ctrl_mode_service(arm_mode) # 开启手臂规划模式
-    robot_instance.srv_controlEndHand(hand_traj_data) # 打开虎口
+    # robot_instance.srv_controlEndHand(hand_traj_data) # 打开虎口
+    robot_instance.srv_controlEndHand(zero_traj_data) # 手指放平
 
     # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
     robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
-    # input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
-    time.sleep(2)
+    input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
+    # time.sleep(2)
 
     # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 
     ik_global_setting_service(0) # 全局ik状态为0
@@ -337,6 +339,8 @@ def gendexgrasp():
         time.sleep(0.1)
 
     # （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续 
+    time.sleep(3)
+    robot_instance.srv_controlEndHand(hand_traj_data) # 打开虎口
     ik_global_setting_service(0) # 全局ik状态为0
     handleOfflineGraspButton(0) # 停止生成姿态
     # 打印ik序号
@@ -402,6 +406,7 @@ class Menu:
                 "单独调用姿态生成 | 停止",
                 "控制头部head | yaw | Pitch",
                 "打开虎口 | 灵巧手",
+                "归为零位置 | 灵巧手",
                 "复位 - 机械臂回到初始位置",
                 Separator(),
                 "退出",
@@ -440,6 +445,9 @@ class Menu:
         elif option == "打开虎口 | 灵巧手":
             # TODO: call head_control service
             robot_instance.srv_controlEndHand(hand_traj_data) 
+        elif option == "归为零位置 | 灵巧手":
+            # TODO: call head_control service
+            robot_instance.srv_controlEndHand(zero_traj_data) 
         elif option == "复位 - 机械臂回到初始位置":
             # TODO: call reset_arm_service
             robot_arm_action(robot_instance, 0, "prepare_go_to_zero")

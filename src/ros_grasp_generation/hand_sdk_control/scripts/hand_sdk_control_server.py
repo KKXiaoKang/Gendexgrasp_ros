@@ -19,6 +19,9 @@ class HandSDKControlServer:
         rospy.loginfo("Hand SDK Control Service Ready.")
     
     def handle_hand_position_request(self, req):
+        # 等待
+        time.sleep(6)
+
         # 将uint8[]转换为list，以避免它们被误解为bytes
         left_hand_position = list(req.left_hand_position)
         right_hand_position = list(req.right_hand_position)
@@ -32,8 +35,12 @@ class HandSDKControlServer:
         # 目标位置，假设最终手的位置是[100, 100, 100, 100, 100, 100]
         # 打开虎口 [0, 100, 0, 0, 0, 0]
         zero_left_hand_position = [0, 100, 0, 0, 0, 0]
-        target_left_hand_position = [100, 100, 100, 100, 100, 100]
-        
+
+        # target_left_hand_position = [100, 100, 100, 100, 100, 100]
+        target_left_hand_position = left_hand_position
+        target_left_hand_position[0], target_left_hand_position[1] = target_left_hand_position[1], target_left_hand_position[0] # 左手灵巧手维度交换
+        # target_left_hand_position[5] = 0
+
         # 发布手部姿态，线性插值10次，间隔0.5秒
         num_steps = 100
         step_duration = 0.1  # 每次发布之间的时间间隔

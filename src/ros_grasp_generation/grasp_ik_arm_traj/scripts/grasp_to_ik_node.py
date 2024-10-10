@@ -344,8 +344,18 @@ class GraspToIK:
         # TODO: 添加offset
         rospy.loginfo(f"final_grasp_position: {final_grasp_position}")
 
-        offset_x = 0.05   # X 轴偏移量
-        offset_y = -0.07  # Y 轴偏移量
+        """ 打开虎口的时候需要 碰一下物体 | figure预备姿态"""
+        # offset_x = 0.05   # X 轴偏移量
+        # offset_y = -0.07  # Y 轴偏移量
+
+        # offset_x = 0.0   # X 轴偏移量
+        # offset_y = 0.0   # Y 轴偏移量
+
+        """ 打开虎口的时候需要 碰一下物体 | kuavo预备姿态"""
+        # offset_x = 0.01    # X 轴偏移量
+        offset_x = -0.01   # X 轴偏移量
+        offset_y = -0.03   # Y 轴偏移量
+
         final_grasp_position[0] += offset_x  # X 轴
         final_grasp_position[1] += offset_y  # Y 轴
 
