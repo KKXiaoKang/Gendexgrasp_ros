@@ -136,13 +136,24 @@ class GraspFilterNode:
         roll, pitch, yaw = euler_angles
 
         # 检查roll是否在指定范围内（-20度到90度）
-        if not (-75 * np.pi / 180 <= roll <= 75 * np.pi / 180):  # 将度数转换为弧度
+        if not (-20 * np.pi / 180 <= roll <= 60 * np.pi / 180):  # 将度数转换为弧度
             return False
 
-        # # 检查yaw是否符合范围
-        # if not (-110 * np.pi / 180 <= roll <= 110 * np.pi / 180):  # 将度数转换为弧度
+        # # 检查pitch是否符合范围
+        # if not (-60 * np.pi / 180 <= pitch <= 60 * np.pi / 180):  # 将度数转换为弧度
         #     return False
-        
+
+        # 检查pitch是否在-60到-15度和15到60度范围内
+        if not ((-60 * np.pi / 180 <= pitch <= -15 * np.pi / 180) or
+                (15 * np.pi / 180 <= pitch <= 60 * np.pi / 180)):  # pitch轴筛选条件
+            return False
+
+        # 检查roll, pitch, yaw是否同时在-10度到10度范围内
+        if (-10 * np.pi / 180 <= roll <= 10 * np.pi / 180 and
+            -10 * np.pi / 180 <= pitch <= 10 * np.pi / 180 and
+            -10 * np.pi / 180 <= yaw <= 10 * np.pi / 180):
+            return False  # 如果同时满足，则过滤掉
+
         # 检索角度
         rospy.loginfo(f"Pose {key} is {euler_angles}.")
         return True

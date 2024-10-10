@@ -200,7 +200,7 @@ class GenGraspService:
         global GRASP_INDEX
         global FIRST_INIT_FALG
 
-        cmap_files = sorted(glob.glob(os.path.join(self.args.cmap_dir, 'contactdb+mustard_bottle_sample_*.pt')), key=self.extract_number)  # 调用 self.extract_number
+        cmap_files = sorted(glob.glob(os.path.join(self.args.cmap_dir, 'contactdb+water_bottle_sample_*.pt')), key=self.extract_number)  # 调用 self.extract_number
         print("cmap_files:", cmap_files)
 
         if GRASP_INDEX >= len(cmap_files):
@@ -269,13 +269,13 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--comment', default='leju', type=str)
     parser.add_argument('--robot_name', default='lejuhand', type=str)
-    parser.add_argument('--cmap_dir', default='logs_ros_inf_cvae/PointNetCVAE_SqrtFullRobots/sharp_lift/leju/contactdb+mustard_bottle', type=str)
+    parser.add_argument('--cmap_dir', default='logs_ros_inf_cvae/PointNetCVAE_SqrtFullRobots/sharp_lift/leju/contactdb+water_bottle', type=str)
     parser.add_argument('--max_iter', default=100, type=int)
     parser.add_argument('--steps_per_iter', default=1, type=int)
     parser.add_argument('--num_particles', default=32, type=int)
     parser.add_argument('--learning_rate', default=5e-3, type=float)
     parser.add_argument('--init_rand_scale', default=0.5, type=float)
-    parser.add_argument('--object_name', default='contactdb+mustard_bottle', type=str)
+    parser.add_argument('--object_name', default='contactdb+water_bottle', type=str)
     parser.add_argument('--energy_func', default='align_dist', type=str)
     parser.add_argument('--pose_topic', default='/best_grasp_pose', type=str)
     parser.add_argument('--hand_topic', default='/best_hand_pos', type=str)

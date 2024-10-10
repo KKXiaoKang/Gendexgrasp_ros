@@ -144,7 +144,7 @@ class GendexContact:
                 if self.open_spec_flag: # TODO:检索算法准确性
                     print(" --------------- faces_indices -------------------------- : ", len(faces_indices))
                     # specified_faces_indices = sorted_faces_indices[0:2049] # 全采样
-                    specified_faces_indices = sorted_faces_indices[1200:2049] # 部分采样
+                    specified_faces_indices = sorted_faces_indices[1600:2049] # 部分采样
                     # print(" --------------- specified_faces_indices -------------------------- : ", specified_faces_indices)
                     mask = np.isin(faces_indices, specified_faces_indices)
                     # print(" --------------- mask -------------------------- : ", mask)

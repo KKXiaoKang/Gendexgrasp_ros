@@ -28,7 +28,8 @@ class HandSDKControlServer:
             left_hand_position, right_hand_position
         ))
 
-        # TODO:DEBUG
+        # TODO:DEBUG 打开虎口 [0, 100, 0, 0, 0, 0]
+        # left_hand_position = [0, 100, 100, 100, 100, 100]
         left_hand_position = [100, 100, 100, 100, 100, 100]
         rospy.loginfo("Modified Left Hand Position: {}".format(left_hand_position))
 

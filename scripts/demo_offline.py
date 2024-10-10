@@ -323,8 +323,8 @@ def gendexgrasp():
 
     # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
     robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
-    # input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
-    time.sleep(2)
+    input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
+    # time.sleep(2)
 
     # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 
     ik_global_setting_service(0) # 全局ik状态为0
