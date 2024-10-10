@@ -17,7 +17,10 @@ from kuavoRobotSDK import kuavo
 
 from utils import rad_to_angle, l_to_r, load_traj
 
-ROS_PUBLIHSER_HZ = 15
+ROS_PUBLIHSER_HZ = 30
+
+# kuavo_human_traj | figure_human_traj
+INPUT_FILE_DIR = "kuavo_human_traj"
 
 """ -------- moveit plan function ----------- """
 def publish_l_arm_traj(publisher, traj) -> None:
@@ -141,38 +144,38 @@ def set_robot_arm_zero_go_to_prepare(kuavo_robot, control_index, publisher):
     """
         从 zero 到 prepare 位置
     """
-    l_traj = load_traj("./traj/zero_go_to_prepare/zero_go_to_prepare_1.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/zero_go_to_prepare/zero_go_to_prepare_1.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/zero_go_to_prepare/zero_go_to_prepare_2.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/zero_go_to_prepare/zero_go_to_prepare_2.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/zero_go_to_prepare/zero_go_to_prepare_3.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/zero_go_to_prepare/zero_go_to_prepare_3.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/zero_go_to_prepare/zero_go_to_prepare_4.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/zero_go_to_prepare/zero_go_to_prepare_4.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/zero_go_to_prepare/zero_go_to_prepare_5.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/zero_go_to_prepare/zero_go_to_prepare_5.json")
     publish_trajectory(publisher, l_traj, control_index)
 
 def set_robot_arm_prepare_go_to_zero(kuavo_robot, control_index, publisher):
     """
         从 prepare 到 zero 位置
     """
-    l_traj = load_traj("./traj/prepare_go_to_zero/prepare_go_to_zero_1.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/prepare_go_to_zero/prepare_go_to_zero_1.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/prepare_go_to_zero/prepare_go_to_zero_2.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/prepare_go_to_zero/prepare_go_to_zero_2.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/prepare_go_to_zero/prepare_go_to_zero_3.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/prepare_go_to_zero/prepare_go_to_zero_3.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/prepare_go_to_zero/prepare_go_to_zero_4.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/prepare_go_to_zero/prepare_go_to_zero_4.json")
     publish_trajectory(publisher, l_traj, control_index)
 
-    l_traj = load_traj("./traj/prepare_go_to_zero/prepare_go_to_zero_5.json")
+    l_traj = load_traj(f"traj/{INPUT_FILE_DIR}/prepare_go_to_zero/prepare_go_to_zero_5.json")
     publish_trajectory(publisher, l_traj, control_index)
 
 

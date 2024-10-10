@@ -131,7 +131,8 @@ def convert_to_3d(u, v, depth, camera_info):
     cx = camera_info.K[2]
     cy = camera_info.K[5]
 
-    z = depth / 1000.0  # 深度值通常以毫米为单位，需要转换为米
+    z = depth / 1000.0 # 深度值通常以毫米为单位，需要转换为米
+    # z += 0.02 # 加上一个偏移量，使得摄像头中心处的深度值为 0.02 m
     x = (u - cx) * z / fx
     y = (v - cy) * z / fy
     return x, y, z

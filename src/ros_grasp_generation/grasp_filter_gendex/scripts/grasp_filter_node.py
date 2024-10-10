@@ -139,12 +139,18 @@ class GraspFilterNode:
         if not (-20 * np.pi / 180 <= roll <= 60 * np.pi / 180):  # 将度数转换为弧度
             return False
 
-        # # 检查pitch是否符合范围
-        # if not (-60 * np.pi / 180 <= pitch <= 60 * np.pi / 180):  # 将度数转换为弧度
-        #     return False
+        """
+        # 检查pitch是否在 -90度 到 -15度 和 15 到 60度 范围内
+        if not ((-90 * np.pi / 180 <= pitch <= -15 * np.pi / 180) or
+                (15 * np.pi / 180 <= pitch <= 60 * np.pi / 180)):  # pitch轴筛选条件
+            return False
 
-        # 检查pitch是否在-60到-15度和15到60度范围内
-        if not ((-60 * np.pi / 180 <= pitch <= -15 * np.pi / 180) or
+        # 检查pitch是否在 -90度 到 -60度 范围内
+        if not (-90 * np.pi / 180 <= pitch <= -60 * np.pi / 180):  # pitch轴筛选条件
+            return False
+        """
+        # 检查pitch是否在 -90度 到 -60度 和 15 到 60度 范围内
+        if not ((-90 * np.pi / 180 <= pitch <= -60 * np.pi / 180) or
                 (15 * np.pi / 180 <= pitch <= 60 * np.pi / 180)):  # pitch轴筛选条件
             return False
 

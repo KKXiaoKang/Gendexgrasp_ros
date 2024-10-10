@@ -323,8 +323,8 @@ def gendexgrasp():
 
     # （1） 设置手臂初始位置(目前demo展示单手先去到抓取位置)
     robot_arm_action(robot_instance, 0, "zero_go_to_prepare")
-    input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
-    # time.sleep(2)
+    # input( " 请等待机器人robot arm 去到prepare位置 ---------完成后Enter键继续")
+    time.sleep(2)
 
     # （2） 调用/gendex_grasp_service 开始生成姿态 | 默认使用42的随机种子 | 
     ik_global_setting_service(0) # 全局ik状态为0
@@ -337,7 +337,9 @@ def gendexgrasp():
         time.sleep(0.1)
 
     # （4） 如果成功调用/gendex_grasp_service 停止生成姿态 | 并且打印ik序号 | 并且按时用户是否继续 
-    handleOfflineGraspButton(0)
+    ik_global_setting_service(0) # 全局ik状态为0
+    handleOfflineGraspButton(0) # 停止生成姿态
+    # 打印ik序号
     print_dividing_line()
     input( " IK求解成功，姿态解算已经完成 ---------完成后Enter键继续")
 
@@ -400,6 +402,7 @@ class Menu:
                 "单独调用姿态生成 | 停止",
                 "控制头部head | yaw | Pitch",
                 "打开虎口 | 灵巧手",
+                "复位 - 机械臂回到初始位置",
                 Separator(),
                 "退出",
             ],
@@ -437,6 +440,9 @@ class Menu:
         elif option == "打开虎口 | 灵巧手":
             # TODO: call head_control service
             robot_instance.srv_controlEndHand(hand_traj_data) 
+        elif option == "复位 - 机械臂回到初始位置":
+            # TODO: call reset_arm_service
+            robot_arm_action(robot_instance, 0, "prepare_go_to_zero")
         elif option == "退出" or option is None:
             exit_menu = True
             print_dividing_line()

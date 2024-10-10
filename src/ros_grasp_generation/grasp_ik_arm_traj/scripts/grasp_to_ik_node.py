@@ -326,18 +326,9 @@ class GraspToIK:
             self.object_real_msg_info.pose.orientation.w
         ])
         grasp_position_offset = np.array([
-            # msg.pose.position.x,
-            # msg.pose.position.y,
-            # msg.pose.position.z 
-            # msg.pose.position.x - 0.025,
-            # msg.pose.position.y - 0.025,
-            # msg.pose.position.z + 0.015
-            # msg.pose.position.x - 0.01,
-            # msg.pose.position.y - 0.01,
-            # msg.pose.position.z + 0.02
             msg.pose.position.x,
             msg.pose.position.y,
-            msg.pose.position.z
+            msg.pose.position.z 
         ])        
         """
             设计左手最终抓取位置
@@ -349,12 +340,16 @@ class GraspToIK:
         rotation_matrix = quaternion_to_rotation_matrix(object_orientation)
         rotated_grasp_offset = np.dot(rotation_matrix, grasp_position_offset)
         final_grasp_position = object_position + rotated_grasp_offset
-        # 添加offset
-        # final_grasp_position[0] += 0.05
-        # final_grasp_position[1] += 0.05
-        # final_grasp_position[2] += 0.05
-
+        
+        # TODO: 添加offset
         rospy.loginfo(f"final_grasp_position: {final_grasp_position}")
+
+        offset_x = 0.05   # X 轴偏移量
+        offset_y = -0.07  # Y 轴偏移量
+        final_grasp_position[0] += offset_x  # X 轴
+        final_grasp_position[1] += offset_y  # Y 轴
+
+        rospy.loginfo(f"final_grasp_position with offset: {final_grasp_position}")
         ik_msg.left_pose.pos_xyz = final_grasp_position.tolist()
         """
             设计左手最终抓取姿态
