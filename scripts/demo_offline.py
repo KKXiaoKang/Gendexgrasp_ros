@@ -408,6 +408,7 @@ class Menu:
                 "打开虎口 | 灵巧手",
                 "归为零位置 | 灵巧手",
                 "复位 - 机械臂回到初始位置",
+                "测试 | 灵巧手",
                 Separator(),
                 "退出",
             ],
@@ -451,6 +452,13 @@ class Menu:
         elif option == "复位 - 机械臂回到初始位置":
             # TODO: call reset_arm_service
             robot_arm_action(robot_instance, 0, "prepare_go_to_zero")
+        elif option == "测试 | 灵巧手":
+            # test
+            test_traj_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            robot_instance.srv_controlEndHand(test_traj_data) 
+            time.sleep(1)
+            test_traj_data = [0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            robot_instance.srv_controlEndHand(test_traj_data) 
         elif option == "退出" or option is None:
             exit_menu = True
             print_dividing_line()

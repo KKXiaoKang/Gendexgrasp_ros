@@ -59,3 +59,12 @@ roslaunch grasp_ik_arm_traj all_in_one.launch
 cd /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/scripts
 python3 demo_offline.py
 ```
+
+```bash
+contactdb+water_bottle_11_best_q
+contactdb+water_bottle_23_best_q
+contactdb+water_bottle_47_best_q
+contactdb+water_bottle_126_best_q
+contactdb+water_bottle_170_best_q
+contactdb+water_bottle_197_best_q
+```

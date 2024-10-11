@@ -353,9 +353,9 @@ class GraspToIK:
         # offset_y = -0.02   # Y 轴偏移量      
         # offset_z = 0.01  # Z 轴偏移量 0.01
 
-        offset_x = 0.02    # X 轴偏移量
-        offset_y = -0.02   # Y 轴偏移量      
-        offset_z = 0.0  # Z 轴偏移量 0.0
+        offset_x = 0.005    # X 轴偏移量
+        offset_y = -0.015   # Y 轴偏移量      
+        offset_z = 0.0      # Z 轴偏移量 0.0
 
         final_grasp_position[0] += offset_x  # X 轴
         final_grasp_position[1] += offset_y  # Y 轴
