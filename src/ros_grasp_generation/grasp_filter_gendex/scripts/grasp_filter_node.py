@@ -135,38 +135,16 @@ class GraspFilterNode:
         euler_angles = self.get_euler_angles(pose)
         roll, pitch, yaw = euler_angles
 
-        # 检查roll是否在指定范围内（-20度到60度）
-        if not (-20 * np.pi / 180 <= roll <= 60 * np.pi / 180):  # 将度数转换为弧度
-            return False
-        
-        # 检查yaw轴是否在指定范围内（-90度到90度）
-        if not (-90 * np.pi / 180 <= yaw <= 90 * np.pi / 180):  # 将度数转换为弧度
-            return False
         """
-        # 检查pitch是否在 -90度 到 -15度 和 15 到 60度 范围内
-        if not ((-90 * np.pi / 180 <= pitch <= -15 * np.pi / 180) or
-                (15 * np.pi / 180 <= pitch <= 60 * np.pi / 180)):  # pitch轴筛选条件
-            return False
-
+            规则 1 ： 筛选可以侧面抓瓶子的姿态
+        """
         # 检查pitch是否在 -90度 到 -60度 范围内
-        if not (-90 * np.pi / 180 <= pitch <= -60 * np.pi / 180):  # pitch轴筛选条件
+        if not (-90 * np.pi / 180 <= pitch <= -80 * np.pi / 180):  # pitch轴筛选条件
             return False
+
         """
-        # 检查pitch是否在 -90度 到 -60度 和 15 到 60度 范围内
-        if not ((-90 * np.pi / 180 <= pitch <= -60 * np.pi / 180) or
-                (15 * np.pi / 180 <= pitch <= 60 * np.pi / 180)):  # pitch轴筛选条件
-            return False
-
-        # # 检查pitch是否在 -90度 到 -60度 范围内
-        # if not (-90 * np.pi / 180 <= pitch <= -60 * np.pi / 180):  # pitch轴筛选条件
-        #     return False
-        
-        # 检查roll, pitch, yaw是否同时在-10度到10度范围内 | 同时满足这些条件的大多数为直立的抓取
-        if (-15 * np.pi / 180 <= roll <= 15 * np.pi / 180 and 
-            -15 * np.pi / 180 <= pitch <= 15 * np.pi / 180 and
-            -15 * np.pi / 180 <= yaw <= 15 * np.pi / 180):
-            return False  # 如果同时满足，则过滤掉
-
+            规则2 ： 筛选可以
+        """
         # 输出终端打印
         rospy.loginfo(f"Pose {key} is {euler_angles}.")
         return True
