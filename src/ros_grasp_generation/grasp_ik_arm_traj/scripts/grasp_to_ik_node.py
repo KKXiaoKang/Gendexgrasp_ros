@@ -17,6 +17,7 @@ from dynamic_biped.msg import robotHandPosition, robotHeadMotionData
 from hand_sdk_control.srv import handPosService, handPosServiceResponse, handPosServiceRequest
 from grasp_ik_arm_traj.srv import ikMonitorService, ikMonitorServiceRequest, ikMonitorServiceResponse
 import tf.transformations as tft
+import time
 
 GLOBAL_IK_SUCCESS = False
 last_seq = None
@@ -96,7 +97,74 @@ class GraspToIK:
         self.head_motor_data.joint_data.append(0.0) # yaw轴
         self.head_motor_data.joint_data.append(0.0) # pitch轴
         self.head_motor_sub = rospy.Subscriber('/robot_head_motor_position', robotHeadMotionData, self.head_motor_callback) # 底层sdk读出来
-    
+
+    def bezier_curve(self, P0, P1, P2, P3, t):
+        return (1 - t)**3 * np.array(P0) + \
+               3 * (1 - t)**2 * t * np.array(P1) + \
+               3 * (1 - t) * t**2 * np.array(P2) + \
+               t**3 * np.array(P3)
+
+    def generate_plan_arm_trajectory_service(self, start_positions, target_positions, start_time, end_time, grasp, alpha=0.3, offset=1.0):
+        # 返回值
+        flag = False
+
+        # 初始化一个存储所有关节贝塞尔曲线的列表
+        all_bezier_points = []
+
+        # 对每个关节遍历并生成贝塞尔曲线
+        for i in range(14):  # 假设有14个关节
+            # 构造单关节p0和p3
+            P0 = [start_time, start_positions[i]]
+            P3 = [end_time, target_positions[i]]
+            # print(f"PO (Joint {i}) : {P0} | P3 : {P3}")
+
+            direction = np.array([P3[0] - P0[0], P3[1] - P0[1]])
+            # print(f"Direction (Joint {i}) : {direction}")
+
+            perpendicular = np.array([-direction[1], direction[0]])
+            perpendicular = perpendicular / np.linalg.norm(perpendicular)  # 归一化
+
+            # 生成控制点 P1 和 P2，加入垂直方向的偏移
+            P1 = P0 + alpha * direction + offset * perpendicular
+            P2 = P3 - alpha * direction + offset * perpendicular
+            # print(f"P1 (Joint {i}): [{P1[0]:.6f}, {P1[1]:.6f}], P2: [{P2[0]:.6f}, {P2[1]:.6f}]")
+
+            # 生成 t 的取值
+            t_values = np.linspace(0, 1, 100)
+
+            # 计算贝塞尔曲线的点
+            bezier_points = np.array([self.bezier_curve(P0, P1, P2, P3, t) for t in t_values])
+            np.set_printoptions(suppress=True, precision=6, formatter={'float_kind': '{:f}'.format})
+            # print(f"bezier_points (Joint {i}): {bezier_points}")
+            # print(f"bezier_points length (Joint {i}): {len(bezier_points)}")
+
+            # 将当前关节的贝塞尔曲线添加到总列表中
+            all_bezier_points.append(bezier_points)
+
+        # 转换为 NumPy 数组，方便操作
+        all_bezier_points = np.array(all_bezier_points)
+
+        # 打印和返回所有关节的贝塞尔曲线
+        # print(f"All Bezier Points Shape: {all_bezier_points.shape}")
+
+        # # 遍历时间步长并发布关节状态
+        # for t_index in range(len(t_values)):
+        #     # 初始化要发布的关节位置列表
+        #     current_joint_positions = []
+
+        #     # 提取所有关节在当前时刻的贝塞尔曲线位置
+        #     for i in range(14):
+        #         joint_position_at_t = all_bezier_points[i][t_index][1]  # 获取每个关节的当前时刻的位置
+        #         current_joint_positions.append(joint_position_at_t)
+
+        #     # 发布当前时刻的所有关节位置
+        #     # print(f"current_joint_positions : {current_joint_positions}")
+        #     time.sleep(0.02)
+        #     grasp.publish_joint_state(current_joint_positions)
+
+        flag = True
+        return flag
+        
     def head_motor_callback(self, msg):
         """
             默认传入的为角度，需要转换为弧度
@@ -369,6 +437,7 @@ class GraspToIK:
         # 合并抓取姿态和物体姿态
         ## object_orientation为基底。quat为旋转
         combined_quat = tft.quaternion_multiply(object_orientation, quat)
+        rospy.loginfo(f"final_grasp_ combined_quat: {combined_quat}")
         ik_msg.left_pose.quat_xyzw = combined_quat.tolist()
         """
             左手的其他设置
