@@ -68,3 +68,28 @@ contactdb+water_bottle_126_best_q
 contactdb+water_bottle_170_best_q
 contactdb+water_bottle_197_best_q
 ```
+
+## docker
+```bash
+# 启动docker并且挂载
+docker run -it -v /home/lab/GenDexGrasp/Gendexgrasp_ros_ok:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok ubuntu:20.04 /bin/bash 
+
+# 提交
+docker commit 184c388c6b97 kuavo/gendexgrasp-dev:v1.0
+
+# 重新开启kuavo/gendexgrasp-dev:v1.0 挂载
+docker run -it -v /home/lab/GenDexGrasp/Gendexgrasp_ros_ok:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok kuavo/gendexgrasp-dev:v1.0 /bin/bash 
+```
+
+## docker - CHANGELOG
+```bash
+# 环境配置
+v1.0 : 
+    1. 基础ubuntu20.04
+
+# 环境配置
+v2.0 :
+    1. ros1 noeitc/ ros2 foxy
+    2. vim
+    3. x11 host / rviz 映射外部
+```
