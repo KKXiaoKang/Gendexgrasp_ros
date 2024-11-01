@@ -92,4 +92,76 @@ v2.0 :
     1. ros1 noeitc/ ros2 foxy
     2. vim
     3. x11 host / rviz 映射外部
+
+# 环境配置
+v3.0 :
+    ## for kuavo_opensource 
+    1. ros noetic : apriltag-ros | moveit | trac-ik
+    2. apt-get install python3-pip
+    3. pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+    4. pip install rospy-message-converter
+    5. apt install git
+    6. cassie_alip_mpc : https://github.com/UMich-BipedLab/cassie_alip_mpc.git
+    7. sudo apt-get install liblcm-dev libgflags-dev libgoogle-glog-dev liblmdb-dev
+    8. drake : https://drake.mit.edu/apt.html | sudo apt install drake-dev=1.19.0-1
+    9. sudo apt-get install libncurses5-dev libncursesw5-dev
+    10. sudo apt-get install libprotobuf-c-dev
+
+# 环境配置
+v4.0 : （在不使用姿态估计和Gendexgrasp生成的姿态下，已经基本按特定的姿态跑通demo）
+    ## for ros-noetic-binary install
+    1. vision_msgs | apt-get install ros-noetic-vision*
+    2. rviz_visual_tools | apt-get install ros-noetic-rviz*
+    3. realsense2_camera | apt-get install ros-noetic-realsense2*
+    4. tf2_ros | apt-get install ros-noetic-tf2*
+
+    ## for ros-foxy-binary install | rs-enumerate-devices
+    1. realsense2 | sudo apt-get install ros-foxy-realsense*
+
+    ## for torch - gpu
+    1. pip3 install networkx
+    2. pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+    ## for onnxruntime-gpu | yolov5
+    1. pip install onnxruntime-gpu
+
+    ## for yolov5
+    1. pip3 install -r requirements.txt
+
+    ## for motion_capture_ik
+    1. pip3 install numpy-quaternion
+
+    ## for demo_offline.py
+    1. pip3 install rich
+
+# 环境配置
+v5.0 :
+    ## 配置anaconda
+    # default python path 
+    export PATH=/usr/bin:$PATH
+    1. bash Anaconda3-2024.10-1-Linux-x86_64.sh -b -p /opt/anaconda 
+    2. export LC_ALL=C.UTF-8 | export LANG=C.UTF-8
+    /opt/anaconda/bin/conda init
+    conda activate
+
+    ## for Gendexgrasp
+    ### 快速 copy anaconda 环境
+    1. conda env export --name gendexgrasp > gendexgrasp.yml
+    ### 快速在另外一台机器上运行
+    2. conda env create -f gendexgrasp.yml
+    3. conda activate gendexgrasp
+    4. pip3 install trimesh
+    5. pip3 install plotly 
+    6. pip3 install scipy
+    7. pip3 install matplotlib
+    8. pip3 install pytorch-kinematics
+    9. pip3 install transforms3d
+    10. pip3 install open3d
+    11. pip3 install tensorboard
+    12. pip3 install rospkg
+
+    ## for Gen-6D-Pose-Estimation
+    ### need to download VGG11_BN_Weights.DEFAULT into default torch
+    1. python3 predict_realsense.py --cfg configs/gen6d_pretrain.yaml --database custom/bottle --output data/custom/bottle/test
+    
 ```
