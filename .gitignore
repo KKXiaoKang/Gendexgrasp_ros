@@ -192,3 +192,6 @@ src/ros_grasp_generation/grasp_filter_gendex/scripts/config
 ros_vision/6DOF_Gen_ros/
 ros_vision/Gen6D/
 .vscode/
+
+# 屏蔽blender_visualizer没必要的文件
+blender_visual
