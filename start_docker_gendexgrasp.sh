@@ -12,14 +12,6 @@ CONTAINER_NAME="kuavo_gendexgrasp_dev"
 # IMAGE_NAME="kuavo/gendexgrasp-dev:v5.0" 
 IMAGE_NAME="kkxiaokang1234/kuavo-gendexgrasp-dev:v1.0"
 
-# docker run -it --gpus all --runtime=nvidia --name kuavo_gendexgrasp_dev --network host \
-#     -v /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/ \
-#     -e ROS_MASTER_URI=http://192.168.0.147:11311 \
-#     -e ROS_IP=192.168.0.147 \
-#     -e DISPLAY=$DISPLAY \
-#     --rm --workdir /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/ \
-#     kuavo/gendexgrasp-dev:v2.0  /bin/bash
-    
 docker run -it --gpus all --runtime=nvidia --net host \
     --name $CONTAINER_NAME \
     --privileged \
@@ -28,10 +20,10 @@ docker run -it --gpus all --runtime=nvidia --net host \
     -v "$PARENT_DIR/.ccache:/root/.ccache" \
     -v "$PARENT_DIR:/root/kuavo_ws" \
     -v "${HOME}/.config/lejuconfig:/root/.config/lejuconfig" \
-    -v /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/ \
+    -v "${HOME}/GenDexGrasp/Gendexgrasp_ros_ok/:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/" \
     -e ROS_MASTER_URI=http://192.168.0.147:11311 \
     -e ROS_IP=192.168.0.147 \
-    --rm --workdir /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/ \
+    --rm --workdir ${HOME}/GenDexGrasp/Gendexgrasp_ros_ok/ \
     --group-add=dialout \
     --ulimit rtprio=99 \
     --cap-add=sys_nice \
