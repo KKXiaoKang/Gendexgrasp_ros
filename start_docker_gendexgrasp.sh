@@ -9,7 +9,8 @@ PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 mkdir -p "$PARENT_DIR/.ccache"
 
 CONTAINER_NAME="kuavo_gendexgrasp_dev"
-IMAGE_NAME="kuavo/gendexgrasp-dev:v5.0"
+# IMAGE_NAME="kuavo/gendexgrasp-dev:v5.0" 
+IMAGE_NAME="kkxiaokang1234/kuavo-gendexgrasp-dev:v1.0"
 
 # docker run -it --gpus all --runtime=nvidia --name kuavo_gendexgrasp_dev --network host \
 #     -v /home/lab/GenDexGrasp/Gendexgrasp_ros_ok/:/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/ \
