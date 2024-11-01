@@ -14,7 +14,9 @@ docker pull kkxiaokang1234/kuavo-gendexgrasp-dev:v1.0
 * 放置于文件夹到你的 $HOME 文件夹下，
 ```bash
 # 参考文件夹的路径
-$HOME/GenDexGrasp/Gendexgrasp_ros_ok
+mkdir $HOME/GenDexGrasp
+cd $HOME/GenDexGrasp
+tar -xzvf Gendexgrasp_ros_ok.tar.gz
 ```
 
 ## 第三步，启动docker脚本，同时完成编译
