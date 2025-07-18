@@ -9,7 +9,7 @@
 1. Install dependencies
 
 ```bash
-pip install pyautogen
+pip install ag2
 ```
 
 2. export related environment variables
